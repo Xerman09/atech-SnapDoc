@@ -3,6 +3,9 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Added (CI / APK Build)
+- Added `.github/workflows/build-apk.yml` to automatically run `typecheck`, `test`, `expo prebuild --platform android`, and Gradle `assembleRelease` (`arm64-v8a,armeabi-v7a`, ProGuard/R8, Hermes), uploading `SnapDoc-release-apk` as a downloadable artifact.
+
 ### Added (Home Workspace & Feature Hub)
 - Added `src/utils/sampleDocument.ts` to generate an offline sample tilted document for instant testing of edge detection, perspective crop, filters, and PDF/Image export.
 - Upgraded `App.tsx` Home screen with a live document search bar, a 2x2 **Tools & Features** grid (`Smart Scan`, `Import Photos`, `Crop & Filters`, `PDF & Image`), quick-export buttons on document rows, and a **Try Sample Document** action.
