@@ -1,7 +1,7 @@
 {
-  "version": "1.0.2",
-  "apkUrl": "https://github.com/Xerman09/atech-SnapDoc/releases/download/v1.0.2/snapdoc-1.0.2.apk",
-  "sha256": "5b79541a234563a25b78dd95e19cb7dd25400eeb95e48865c83f26edb33ebdf5",
-  "notes": "New SnapDoc v1.0.2 release with improved scanning, safe area fixes, and shadow-removal filters.",
-  "releasedAt": 1794716717226
+  "version": "1.0.3",
+  "apkUrl": "https://github.com/Xerman09/atech-SnapDoc/releases/download/v1.0.3/snapdoc-1.0.3.apk",
+  "sha256": "592d8a5ee8849d14fb0f7f564487dac367f478890c4adc9cd6985588818d493b",
+  "notes": "New SnapDoc v1.0.3 release with improved scanning, safe area fixes, and shadow-removal filters.",
+  "releasedAt": 1794719510519
 }
