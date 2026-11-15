@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { BrandHeader } from './src/components/BrandHeader';
+import { UpdateModal } from './src/components/UpdateModal';
 import { LegalDocId } from './src/constants/legal';
 import { CaptureScreen } from './src/screens/CaptureScreen';
 import { CropAndEnhanceScreen } from './src/screens/CropAndEnhanceScreen';
@@ -42,6 +43,10 @@ import {
   getStoredConsent,
   setStoredConsent,
 } from './src/services/storage/securePrefs';
+import {
+  checkForInAppUpdate,
+  UpdateManifest,
+} from './src/services/update/inAppUpdater';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { ScanDocument, ScannedPage } from './src/types/scanner';
 import { formatRelativeDate, formatShortDate } from './src/utils/dateFormat';
@@ -69,6 +74,7 @@ function MainApp() {
   const [activePages, setActivePages] = useState<ScannedPage[]>([]);
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
   const [pendingUri, setPendingUri] = useState<string | null>(null);
+  const [availableUpdate, setAvailableUpdate] = useState<UpdateManifest | null>(null);
 
   const refreshDocuments = useCallback(async () => {
     const docs = await listDocuments();
@@ -93,6 +99,11 @@ function MainApp() {
       setHasConsented(consented);
       setRoute(consented ? 'home' : 'onboarding');
       setInitializing(false);
+
+      // Silent background update check when online; no-op when offline
+      checkForInAppUpdate().then((manifest) => {
+        if (manifest) setAvailableUpdate(manifest);
+      });
     })();
   }, []);
 
@@ -304,6 +315,17 @@ function MainApp() {
         <SettingsScreen
           onBack={() => setRoute('home')}
           onOpenLegal={(docId) => openLegal(docId, 'settings')}
+          onCheckForUpdates={async () => {
+            const manifest = await checkForInAppUpdate();
+            if (manifest) {
+              setAvailableUpdate(manifest);
+            } else {
+              Alert.alert(
+                'Up to Date',
+                'You are running the latest version of SnapDoc (or you are currently offline).'
+              );
+            }
+          }}
           onDeleteAllData={async () => {
             await wipeAllDatabaseData();
             deleteAllScanFiles();
@@ -415,6 +437,10 @@ function MainApp() {
           }}
         />
       </View>
+      <UpdateModal
+        manifest={availableUpdate}
+        onDismiss={() => setAvailableUpdate(null)}
+      />
     </SafeAreaView>
   );
 }

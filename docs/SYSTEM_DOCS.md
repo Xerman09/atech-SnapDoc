@@ -33,7 +33,7 @@ SnapDoc runs completely offline on the user's device. Document capture, edge det
 | Scan Enhancement Filters | Completed | Phase 4 | Original, Magic Color, Grayscale, B&W Adaptive Scan + Brightness/Contrast/Sharpness |
 | Multi-Page Workspace & Encrypted Local DB | Completed | Phase 5 | Parameterized `expo-sqlite` + `expo-secure-store`, multi-page reorder/rename/delete |
 | Image (PNG/JPEG) & PDF Export | Completed | Phase 6 | Offline `pdf-lib` multi-page PDF (A4/Letter/Fit, margins, quality) + Gallery/File image export |
-| In-App Auto-Update & Compressed APK | Planned | Phase 7 | In-app update modal + R8/ProGuard/ABI splits |
+| In-App Auto-Update & Compressed APK | Completed | Phase 7 | HTTPS manifest check, SHA-256 verification, in-app Android installer, ProGuard/R8 + Hermes + ABI splits |
 
 ---
 
@@ -55,6 +55,9 @@ SnapDoc runs completely offline on the user's device. Document capture, edge det
 | `pdf-lib` | Offline single/multi-page PDF generation | Yes | None |
 | `expo-sharing` | Native offline share/save-to-files sheet | Yes | None |
 | `expo-media-library` | Save scanned images to device gallery | Yes | None |
+| `expo-intent-launcher` | Direct in-app Android APK update installer | Yes | None |
+| `expo-crypto` | SHA-256 checksum verification for updates | Yes | None |
+| `expo-build-properties` | ProGuard/R8 shrinking & HTTPS-only enforcement | Yes | None |
 
 ---
 

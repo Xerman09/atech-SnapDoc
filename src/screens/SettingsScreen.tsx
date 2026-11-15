@@ -16,12 +16,14 @@ import { formatShortDate } from '../utils/dateFormat';
 interface SettingsScreenProps {
   onBack: () => void;
   onOpenLegal: (docId: LegalDocId) => void;
+  onCheckForUpdates: () => void;
   onDeleteAllData: () => void;
 }
 
 export function SettingsScreen({
   onBack,
   onOpenLegal,
+  onCheckForUpdates,
   onDeleteAllData,
 }: SettingsScreenProps) {
   const { colors, mode, setMode } = useTheme();
@@ -151,6 +153,17 @@ export function SettingsScreen({
           <Text style={[styles.helperText, { color: colors.textSecondary }]}>
             Developer: {BUSINESS_INFO.developerName} • 100% Offline
           </Text>
+          <Pressable
+            onPress={onCheckForUpdates}
+            accessibilityRole="button"
+            accessibilityLabel="Check for in-app updates"
+            style={[styles.rowBtn, { borderColor: colors.border, marginTop: 4 }]}
+          >
+            <Text style={[styles.rowText, { color: colors.primary }]}>
+              Check for In-App Updates
+            </Text>
+            <Text style={[styles.chevron, { color: colors.primary }]}>›</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>

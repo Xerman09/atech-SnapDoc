@@ -4,6 +4,13 @@ All notable changes to **SnapDoc (`scanner_app`)** will be documented in this fi
 
 ## [Unreleased] — Nov 15, 2026
 ### Added
+- **Phase 7: In-App Auto-Update & Compressed APK Build**:
+  - Installed `expo-intent-launcher`, `expo-crypto`, and `expo-build-properties`.
+  - Built HTTPS-only in-app updater (`src/services/update/inAppUpdater.ts`) with `zod` manifest validation, SHA-256 integrity verification, and direct Android APK installation without opening an external browser.
+  - Built `src/components/UpdateModal.tsx` and wired silent launch update check + manual Settings update check.
+  - Configured `app.json` and `eas.json` for Hermes, ProGuard/R8 (`enableProguardInReleaseBuilds`, `enableShrinkResourcesInReleaseBuilds`), ABI splits (`arm64-v8a`, `armeabi-v7a`), and `usesCleartextTraffic: false`.
+
+### Phase 6 (Completed)
 - **Phase 6: Export Engine (Image & PDF)**:
   - Installed `pdf-lib`, `expo-sharing`, and `expo-media-library`.
   - Built offline export engine (`src/services/export/exportService.ts`) supporting single/multi-page PDFs (A4, US Letter, Fit-to-Image, margins, quality presets) and PNG/JPEG image export to device gallery or file share sheet.
