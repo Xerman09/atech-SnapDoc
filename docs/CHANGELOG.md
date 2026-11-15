@@ -4,6 +4,12 @@ All notable changes to **SnapDoc (`scanner_app`)** will be documented in this fi
 
 ## [Unreleased] — Nov 15, 2026
 ### Added
+- **Phase 8: Security Audit, Unit Tests & Verification**:
+  - Installed `vitest` and added `test` and `typecheck` scripts in `package.json`.
+  - Added unit test suites in `src/__tests__/` covering human-readable date formatting (`dateFormat.test.ts`), file upload/import security validation (`fileValidation.test.ts`), and CV perspective warp + scan filters (`cvAndFilters.test.ts`).
+  - Verified `npm audit --audit-level=high` (0 high/critical vulnerabilities), `npm run typecheck`, and `npm test` (3 files, 11/11 tests passing).
+
+### Phase 7 (Completed)
 - **Phase 7: In-App Auto-Update & Compressed APK Build**:
   - Installed `expo-intent-launcher`, `expo-crypto`, and `expo-build-properties`.
   - Built HTTPS-only in-app updater (`src/services/update/inAppUpdater.ts`) with `zod` manifest validation, SHA-256 integrity verification, and direct Android APK installation without opening an external browser.

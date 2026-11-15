@@ -34,6 +34,7 @@ SnapDoc runs completely offline on the user's device. Document capture, edge det
 | Multi-Page Workspace & Encrypted Local DB | Completed | Phase 5 | Parameterized `expo-sqlite` + `expo-secure-store`, multi-page reorder/rename/delete |
 | Image (PNG/JPEG) & PDF Export | Completed | Phase 6 | Offline `pdf-lib` multi-page PDF (A4/Letter/Fit, margins, quality) + Gallery/File image export |
 | In-App Auto-Update & Compressed APK | Completed | Phase 7 | HTTPS manifest check, SHA-256 verification, in-app Android installer, ProGuard/R8 + Hermes + ABI splits |
+| Security Audit, Unit Tests & Verification | Completed | Phase 8 | `vitest` (11/11 tests passing), `tsc --noEmit` passing, `npm audit --audit-level=high` (0 high/critical) |
 
 ---
 
