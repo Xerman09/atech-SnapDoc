@@ -6,7 +6,7 @@ interface BrandHeaderProps {
   subtitle?: string;
 }
 
-export function BrandHeader({ subtitle = 'Offline Document Studio' }: BrandHeaderProps) {
+export function BrandHeader({ subtitle = 'Document Scanner' }: BrandHeaderProps) {
   const { colors } = useTheme();
 
   return (
@@ -24,14 +24,9 @@ export function BrandHeader({ subtitle = 'Offline Document Studio' }: BrandHeade
         />
       </View>
       <View style={styles.textGroup}>
-        <View style={styles.titleRow}>
-          <Text style={[styles.brandName, { color: colors.textPrimary }]}>
-            SnapDoc
-          </Text>
-          <View style={[styles.badge, { backgroundColor: colors.accentSoft }]}>
-            <Text style={[styles.badgeText, { color: colors.accent }]}>LOCAL</Text>
-          </View>
-        </View>
+        <Text style={[styles.brandName, { color: colors.textPrimary }]}>
+          SnapDoc
+        </Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
           {subtitle}
         </Text>
@@ -61,28 +56,13 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
   brandName: {
     fontSize: 20,
     fontWeight: '700',
     letterSpacing: -0.4,
   },
-  badge: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 5,
-  },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.6,
-  },
   subtitle: {
-    fontSize: 12,
+    fontSize: 12.5,
     fontWeight: '500',
   },
 });

@@ -3,6 +3,9 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Changed (UI Copy Cleanup)
+- Removed technical badges and internal labels (`LOCAL` badge, `PRIVACY-FIRST ARCHITECTURE` eyebrow, internal filter slugs, and architecture jargon) across `BrandHeader.tsx`, `OnboardingConsentScreen.tsx`, `DocumentDetailScreen.tsx`, `UpdateModal.tsx`, and `legal.ts`.
+
 ### Changed (UI/UX Upgrade)
 - Upgraded the visual design system (`src/theme/colors.ts`) to an **Architectural Paper (Light)** and **Obsidian Studio (Dark)** palette with WCAG AA contrast.
 - Installed `@expo/vector-icons` and added `src/components/StudioShell.tsx` for responsive centered studio framing on desktop/web and full-width mobile layout.

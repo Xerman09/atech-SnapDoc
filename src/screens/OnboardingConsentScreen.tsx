@@ -43,7 +43,7 @@ export function OnboardingConsentScreen({
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerBlock}>
-          <BrandHeader subtitle="100% Offline & Private Document Studio" />
+          <BrandHeader subtitle="Document Scanner" />
         </View>
 
         <View
@@ -53,14 +53,11 @@ export function OnboardingConsentScreen({
           ]}
         >
           <View style={styles.heroIntro}>
-            <Text style={[styles.eyebrow, { color: colors.accent }]}>
-              PRIVACY-FIRST ARCHITECTURE
-            </Text>
             <Text style={[styles.title, { color: colors.textPrimary }]}>
               Before you begin
             </Text>
             <Text style={[styles.description, { color: colors.textSecondary }]}>
-              Every scan, edge crop, and PDF export happens strictly on your device. Zero cloud uploads, zero analytics, and zero trackers.
+              Your documents stay private on your device and are never uploaded.
             </Text>
           </View>
 

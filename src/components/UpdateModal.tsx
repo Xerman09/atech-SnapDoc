@@ -56,7 +56,7 @@ export function UpdateModal({ manifest, onDismiss }: UpdateModalProps) {
             Update Available (v{manifest.version})
           </Text>
           <Text style={[styles.meta, { color: colors.textSecondary }]}>
-            Released {releasedText} • Direct In-App Update
+            Released {releasedText}
           </Text>
           <Text style={[styles.notes, { color: colors.textSecondary }]}>
             {manifest.notes}

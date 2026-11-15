@@ -92,7 +92,7 @@ export const LEGAL_DOCUMENTS: Record<LegalDocId, LegalDocument> = {
     sections: [
       {
         heading: 'Publisher Information',
-        body: `Developer: ${BUSINESS_INFO.developerName}\nApplication: ${BUSINESS_INFO.appName} (v${BUSINESS_INFO.appVersion})\nArchitecture: 100% Offline Local-Only React Native App`,
+        body: `Developer: ${BUSINESS_INFO.developerName}\nApplication: ${BUSINESS_INFO.appName} (v${BUSINESS_INFO.appVersion})`,
       },
       {
         heading: 'Support & Inquiries',

@@ -29,6 +29,13 @@ interface DocumentDetailScreenProps {
   onExport: () => void;
 }
 
+const FILTER_LABELS: Record<ScannedPage['filter'], string> = {
+  original: 'Original',
+  magic_color: 'Magic Color',
+  grayscale: 'Grayscale',
+  bw_scan: 'Black & White',
+};
+
 export function DocumentDetailScreen({
   document,
   pages,
@@ -205,7 +212,7 @@ export function DocumentDetailScreen({
                   Page {index + 1}
                 </Text>
                 <Text style={[styles.pageSub, { color: colors.textSecondary }]}>
-                  {item.filter.replace('_', ' ').toUpperCase()} • {dateText}
+                  {FILTER_LABELS[item.filter]} • {dateText}
                 </Text>
 
                 <View style={styles.pageActions}>
