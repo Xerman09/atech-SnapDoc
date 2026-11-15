@@ -4,6 +4,14 @@ All notable changes to **SnapDoc (`scanner_app`)** will be documented in this fi
 
 ## [Unreleased] — Nov 15, 2026
 ### Added
+- **Phase 4: Edge Detection, Perspective Crop & Scan Filters**:
+  - Installed `expo-image-manipulator`, `react-native-svg`, and `jpeg-js`.
+  - Added projective homography & bilinear perspective warp (`src/services/cv/geometry.ts`).
+  - Added offline Sobel edge & 4-corner document detector (`src/services/cv/edgeDetector.ts`).
+  - Added CamScanner-style pixel filter engine (`src/services/filters/scanFilters.ts`): Original, Magic Color, Grayscale, B&W Adaptive Scan, plus Brightness, Contrast, and Sharpness controls.
+  - Added offline CV pipeline (`src/services/cv/imagePipeline.ts`) and interactive 4-point crop & enhancement editor (`src/screens/CropAndEnhanceScreen.tsx`).
+
+### Phase 3 (Completed)
 - **Phase 3: Document Capture & Safe Import Module**:
   - Installed `expo-camera`, `expo-image-picker`, `expo-file-system`, and `zod` (SDK 58 compatible).
   - Added strict image import validation (`src/utils/fileValidation.ts`): allowlists `jpg`/`jpeg`/`png`/`webp`, enforces 20 MB and 10,000 px limits, and sanitizes filenames.

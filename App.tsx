@@ -13,6 +13,7 @@ import { StatusBar } from 'expo-status-bar';
 import { BrandHeader } from './src/components/BrandHeader';
 import { LegalDocId } from './src/constants/legal';
 import { CaptureScreen } from './src/screens/CaptureScreen';
+import { CropAndEnhanceScreen } from './src/screens/CropAndEnhanceScreen';
 import { LegalDocumentScreen } from './src/screens/LegalDocumentScreen';
 import { OnboardingConsentScreen } from './src/screens/OnboardingConsentScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
@@ -22,9 +23,19 @@ import {
 } from './src/services/capture/importImages';
 import { deleteAllScanFiles } from './src/services/storage/localFiles';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
+import { FilterPreset } from './src/types/scanner';
 import { formatRelativeDate } from './src/utils/dateFormat';
 
-type ActiveRoute = 'onboarding' | 'home' | 'capture' | 'settings' | 'legal';
+type ActiveRoute = 'onboarding' | 'home' | 'capture' | 'edit' | 'settings' | 'legal';
+
+interface LocalScanItem {
+  id: string;
+  originalUri: string;
+  processedUri: string;
+  source: 'camera' | 'gallery';
+  filter: FilterPreset;
+  createdAt: number;
+}
 
 function MainApp() {
   const { colors, resolvedScheme } = useTheme();
@@ -32,12 +43,31 @@ function MainApp() {
   const [route, setRoute] = useState<ActiveRoute>('onboarding');
   const [legalReturnRoute, setLegalReturnRoute] = useState<'onboarding' | 'settings'>('onboarding');
   const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocId>('privacy');
-  const [capturedPages, setCapturedPages] = useState<CapturedImageAsset[]>([]);
+  const [scans, setScans] = useState<LocalScanItem[]>([]);
+  const [pendingAsset, setPendingAsset] = useState<CapturedImageAsset | null>(null);
 
   const openLegal = (docId: LegalDocId, returnTo: 'onboarding' | 'settings') => {
     setActiveLegalDoc(docId);
     setLegalReturnRoute(returnTo);
     setRoute('legal');
+  };
+
+  const handleIncomingAssets = (assets: CapturedImageAsset[]) => {
+    if (assets.length === 0) return;
+    // Open the first newly captured/imported image in the crop & filter editor
+    setPendingAsset(assets[0]);
+    if (assets.length > 1) {
+      const rest: LocalScanItem[] = assets.slice(1).map((a) => ({
+        id: a.id,
+        originalUri: a.uri,
+        processedUri: a.uri,
+        source: a.source,
+        filter: 'original',
+        createdAt: a.createdAt,
+      }));
+      setScans((prev) => [...rest, ...prev]);
+    }
+    setRoute('edit');
   };
 
   const handleQuickImport = async () => {
@@ -49,7 +79,7 @@ function MainApp() {
       Alert.alert('Some Images Were Skipped', summary);
     }
     if (result.imported.length > 0) {
-      setCapturedPages((prev) => [...result.imported, ...prev]);
+      handleIncomingAssets(result.imported);
     }
   };
 
@@ -85,11 +115,39 @@ function MainApp() {
       <>
         <StatusBar style="light" />
         <CaptureScreen
-          onCaptured={(assets) => {
-            setCapturedPages((prev) => [...assets, ...prev]);
+          onCaptured={handleIncomingAssets}
+          onCancel={() => setRoute('home')}
+        />
+      </>
+    );
+  }
+
+  if (route === 'edit' && pendingAsset) {
+    return (
+      <>
+        <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
+        <CropAndEnhanceScreen
+          initialUri={pendingAsset.uri}
+          onSave={(edited) => {
+            const newItem: LocalScanItem = {
+              id: pendingAsset.id,
+              originalUri: edited.originalUri,
+              processedUri: edited.processedUri,
+              source: pendingAsset.source,
+              filter: edited.filter,
+              createdAt: pendingAsset.createdAt,
+            };
+            setScans((prev) => [
+              newItem,
+              ...prev.filter((item) => item.id !== newItem.id),
+            ]);
+            setPendingAsset(null);
             setRoute('home');
           }}
-          onCancel={() => setRoute('home')}
+          onCancel={() => {
+            setPendingAsset(null);
+            setRoute('home');
+          }}
         />
       </>
     );
@@ -104,7 +162,8 @@ function MainApp() {
           onOpenLegal={(docId) => openLegal(docId, 'settings')}
           onDeleteAllData={() => {
             deleteAllScanFiles();
-            setCapturedPages([]);
+            setScans([]);
+            setPendingAsset(null);
             setHasConsented(false);
             setRoute('onboarding');
           }}
@@ -156,7 +215,7 @@ function MainApp() {
         </View>
 
         <FlatList
-          data={capturedPages}
+          data={scans}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
@@ -165,30 +224,43 @@ function MainApp() {
                 No Scans Yet
               </Text>
               <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                Tap "Scan Camera" or "Import Images" to capture a document offline.
+                Tap "Scan Camera" or "Import Images" to capture, crop, and enhance a document offline.
               </Text>
             </View>
           }
           renderItem={({ item, index }) => {
             const formattedDate = formatRelativeDate(item.createdAt);
             return (
-              <View
+              <Pressable
+                onPress={() => {
+                  setPendingAsset({
+                    id: item.id,
+                    uri: item.originalUri,
+                    width: 0,
+                    height: 0,
+                    source: item.source,
+                    createdAt: item.createdAt,
+                  });
+                  setRoute('edit');
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={`Edit scanned page ${scans.length - index}, filter ${item.filter}`}
                 style={[styles.pageCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
               >
                 <Image
-                  source={{ uri: item.uri }}
+                  source={{ uri: item.processedUri }}
                   style={[styles.thumb, { borderColor: colors.border }]}
-                  accessibilityLabel={`Scanned page ${index + 1} captured ${formattedDate}`}
+                  accessibilityLabel={`Scanned page ${scans.length - index} captured ${formattedDate}`}
                 />
                 <View style={styles.pageMeta}>
                   <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>
-                    Scanned Page {capturedPages.length - index}
+                    Scanned Page {scans.length - index}
                   </Text>
                   <Text style={[styles.pageSubtitle, { color: colors.textSecondary }]}>
-                    {item.source === 'camera' ? 'Camera Capture' : 'Gallery Import'} • {formattedDate}
+                    {item.filter.replace('_', ' ').toUpperCase()} • {formattedDate}
                   </Text>
                 </View>
-              </View>
+              </Pressable>
             );
           }}
         />

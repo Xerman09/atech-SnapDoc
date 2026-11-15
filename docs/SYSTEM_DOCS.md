@@ -29,8 +29,8 @@ SnapDoc runs completely offline on the user's device. Document capture, edge det
 | Brand Identity & Custom Logo | Completed | Phase 2 | Custom SnapDoc icon, adaptive Android icon, splash, `BrandHeader` |
 | Legal, Privacy & Compliance Screens | Completed | Phase 2 | Offline Privacy, Terms, Refund, Cookie, Business Info, Age Gate, Data Deletion |
 | Live Camera & Safe Image Import | Completed | Phase 3 | Offline `expo-camera`, multi-image gallery import, `zod` + file allowlist validation |
-| 4-Point Perspective Crop & Edge Detection | Planned | Phase 4 | Interactive corner editor & perspective warp |
-| Scan Enhancement Filters | Planned | Phase 4 | Original, Magic Color, Grayscale, B&W Scan |
+| 4-Point Perspective Crop & Edge Detection | Completed | Phase 4 | Sobel edge detector, inverse homography warp, draggable SVG corner handles, 90° rotation |
+| Scan Enhancement Filters | Completed | Phase 4 | Original, Magic Color, Grayscale, B&W Adaptive Scan + Brightness/Contrast/Sharpness |
 | Multi-Page Workspace & Encrypted Local DB | Planned | Phase 5 | Parameterized SQLite + SecureStore |
 | Image (PNG/JPEG) & PDF Export | Planned | Phase 6 | Single/multi-page PDF (A4/Letter/Fit) |
 | In-App Auto-Update & Compressed APK | Planned | Phase 7 | In-app update modal + R8/ProGuard/ABI splits |
@@ -47,6 +47,9 @@ SnapDoc runs completely offline on the user's device. Document capture, edge det
 | `expo-camera` | Offline camera document capture | Yes | None |
 | `expo-image-picker` | Local gallery multi-image import | Yes | None |
 | `expo-file-system` | App-private `scans/` file storage | Yes | None |
+| `expo-image-manipulator` | Native image rotation & resize | Yes | None |
+| `react-native-svg` | Interactive 4-point crop polygon overlay | Yes | None |
+| `jpeg-js` | Pure-JS offline JPEG decode/encode for CV | Yes | None |
 | `expo-sqlite` *(planned)* | Parameterized local database | Yes | None |
 | `expo-secure-store` *(planned)* | Encrypted key/PIN storage | Yes | None |
 
