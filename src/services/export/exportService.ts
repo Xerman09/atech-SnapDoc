@@ -220,3 +220,35 @@ export async function saveImagesToDeviceGallery(uris: string[]): Promise<number>
   }
   return savedCount;
 }
+
+/**
+ * Saves a generated PDF file directly to a user-selected local folder (e.g. Downloads)
+ * on Android/iOS via the system directory picker, or triggers a browser download on Web.
+ */
+export async function savePdfToLocalDevice(
+  uri: string,
+  baseTitle: string
+): Promise<{ saved: boolean; fileName: string }> {
+  const fileName = sanitizeFilename(`${baseTitle}_${Date.now()}.pdf`, 'pdf');
+
+  if (Platform.OS === 'web') {
+    await shareLocalFile(uri, 'application/pdf', fileName);
+    return { saved: true, fileName };
+  }
+
+  let pickedDir: Directory;
+  try {
+    pickedDir = await Directory.pickDirectoryAsync();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message.toLowerCase() : '';
+    if (msg.includes('cancel') || msg.includes('abort')) {
+      return { saved: false, fileName };
+    }
+    throw err;
+  }
+
+  const bytes = await new File(uri).bytes();
+  const destFile = pickedDir.createFile(fileName, 'application/pdf');
+  await destFile.write(bytes);
+  return { saved: true, fileName };
+}

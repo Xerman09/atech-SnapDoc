@@ -3,6 +3,10 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Added (Local PDF Download)
+- Added `savePdfToLocalDevice` in `src/services/export/exportService.ts` using `Directory.pickDirectoryAsync()` on Android/iOS (and direct browser download on Web) so users can save generated PDFs directly to any local device folder (e.g., Downloads) without needing the Share Sheet.
+- Updated `src/screens/ExportScreen.tsx` PDF actions to provide both **Save PDF to Device** and **Share / Open PDF**.
+
 ### Release v1.0.3 — Precision Auto-Crop & CamScanner-Grade Output
 - Upgraded `src/services/cv/edgeDetector.ts` from single-point quadrant scoring to multi-channel (RGB + Luma) Sobel + 1D Non-Maximum Suppression + directed 4-side Hough line voting + multi-candidate 4-side edge-support scoring + weighted least-squares line refinement, so auto-crop snaps to the document's true 4 edges rather than distracting desk/border edges.
 - Upgraded `src/services/filters/scanFilters.ts` with separable morphological local-max paper background estimation (halo-free shadow removal in `Magic Color` and `Grayscale`), subtle saturation & ink contrast tuning, anti-aliased smoothstep adaptive thresholding in `B&W Scan`, and automatic subtle unsharp masking for crisp text.

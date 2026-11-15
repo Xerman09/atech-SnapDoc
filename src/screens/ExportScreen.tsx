@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,6 +19,7 @@ import {
   PdfPageSize,
   prepareExportImage,
   saveImagesToDeviceGallery,
+  savePdfToLocalDevice,
   shareLocalFile,
 } from '../services/export/exportService';
 import { useTheme } from '../theme/ThemeContext';
@@ -39,7 +41,7 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
   const [imageFormat, setImageFormat] = useState<ImageExportFormat>('jpeg');
   const [busy, setBusy] = useState(false);
 
-  const handleExportPdf = async () => {
+  const handleExportPdf = async (destination: 'download' | 'share') => {
     if (busy || pages.length === 0) return;
     setBusy(true);
     try {
@@ -51,11 +53,21 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
         quality,
       });
       const sizeKb = Math.max(1, Math.round(sizeBytes / 1024));
-      await shareLocalFile(
-        uri,
-        'application/pdf',
-        `${document.title}_${sizeKb}KB.pdf`
-      );
+      if (destination === 'download') {
+        const res = await savePdfToLocalDevice(uri, document.title);
+        if (res.saved && Platform.OS !== 'web') {
+          Alert.alert(
+            'PDF Saved Locally',
+            `${res.fileName} (${sizeKb} KB) was saved to your selected folder.`
+          );
+        }
+      } else {
+        await shareLocalFile(
+          uri,
+          'application/pdf',
+          `${document.title}_${sizeKb}KB.pdf`
+        );
+      }
     } catch (err) {
       Alert.alert(
         'PDF Export Failed',
@@ -338,18 +350,32 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
             </Text>
           </View>
         ) : exportMode === 'pdf' ? (
-          <Pressable
-            onPress={handleExportPdf}
-            disabled={pages.length === 0}
-            accessibilityRole="button"
-            accessibilityLabel="Generate and download PDF document"
-            style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
-          >
-            <Ionicons name="download-outline" size={18} color={colors.primaryText} />
-            <Text style={[styles.primaryBtnText, { color: colors.primaryText }]}>
-              Download PDF
-            </Text>
-          </Pressable>
+          <View style={styles.imageActions}>
+            <Pressable
+              onPress={() => handleExportPdf('download')}
+              disabled={pages.length === 0}
+              accessibilityRole="button"
+              accessibilityLabel="Save PDF document locally to device"
+              style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
+            >
+              <Ionicons name="download-outline" size={18} color={colors.primaryText} />
+              <Text style={[styles.primaryBtnText, { color: colors.primaryText }]}>
+                Save PDF to Device
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => handleExportPdf('share')}
+              disabled={pages.length === 0}
+              accessibilityRole="button"
+              accessibilityLabel="Share or open PDF document"
+              style={[styles.secondaryBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
+            >
+              <Ionicons name="share-social-outline" size={17} color={colors.textPrimary} />
+              <Text style={[styles.secondaryBtnText, { color: colors.textPrimary }]}>
+                Share / Open PDF
+              </Text>
+            </Pressable>
+          </View>
         ) : (
           <View style={styles.imageActions}>
             <Pressable
