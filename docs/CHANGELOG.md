@@ -3,6 +3,12 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Added (Planning / Roadmap)
+- Created `docs/V2_PLAN.md` documenting the SnapDoc v2.0 phased product and engineering roadmap (Phases 9–15):
+  - **Phase 9:** UI/UX Navigation Shell with a 5-item bottom bar (`Home`, `Files`, raised center **Camera**, `Tools`, `Settings`).
+  - **Phase 10:** App launch loading state and **QR Code & Barcode** scanner.
+  - **Phases 11–15:** **ID Cards** dual-side capture, Batch/Book modes, Workspace Folders/Trash, **Extract Text** (offline OCR), offline **Convert** suite (**To Word**, **To Excel**, **To PPT**, **PDF to Image**), E-Signatures/Markup, and Privacy Vault/Local Backup.
+
 ### Fixed (Metro Resolver)
 - Updated `metro.config.js` to keep `unstable_enablePackageExports` enabled for React Native 0.88 (`react-native/react-private-interface`) while routing only `tslib` to `tslib/tslib.js`.
 
