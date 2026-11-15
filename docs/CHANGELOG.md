@@ -3,6 +3,10 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Added (Home Workspace & Feature Hub)
+- Added `src/utils/sampleDocument.ts` to generate an offline sample tilted document for instant testing of edge detection, perspective crop, filters, and PDF/Image export.
+- Upgraded `App.tsx` Home screen with a live document search bar, a 2x2 **Tools & Features** grid (`Smart Scan`, `Import Photos`, `Crop & Filters`, `PDF & Image`), quick-export buttons on document rows, and a **Try Sample Document** action.
+
 ### Fixed
 - Added `update-manifest.json` at repository root and restricted `checkForInAppUpdate()` to `Platform.OS === 'android'` so Web previews do not log a 404 console error.
 

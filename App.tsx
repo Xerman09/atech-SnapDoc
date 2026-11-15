@@ -1,12 +1,14 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -51,6 +53,7 @@ import {
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { ScanDocument, ScannedPage } from './src/types/scanner';
 import { formatRelativeDate, formatShortDate } from './src/utils/dateFormat';
+import { createSampleDocumentDataUri } from './src/utils/sampleDocument';
 
 type ActiveRoute =
   | 'onboarding'
@@ -71,6 +74,7 @@ function MainApp() {
   const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocId>('privacy');
 
   const [documents, setDocuments] = useState<ScanDocument[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [activeDoc, setActiveDoc] = useState<ScanDocument | null>(null);
   const [activePages, setActivePages] = useState<ScannedPage[]>([]);
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
@@ -107,17 +111,23 @@ function MainApp() {
     })();
   }, []);
 
+  const filteredDocuments = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return documents;
+    return documents.filter((d) => d.title.toLowerCase().includes(q));
+  }, [documents, searchQuery]);
+
   const openLegal = (docId: LegalDocId, returnTo: 'onboarding' | 'settings') => {
     setActiveLegalDoc(docId);
     setLegalReturnRoute(returnTo);
     setRoute('legal');
   };
 
-  const openDocument = async (doc: ScanDocument) => {
+  const openDocument = async (doc: ScanDocument, targetRoute: 'document' | 'export' = 'document') => {
     const pages = await listPagesByDocument(doc.id);
     setActiveDoc(doc);
     setActivePages(pages);
-    setRoute('document');
+    setRoute(targetRoute);
   };
 
   const handleIncomingAssets = async (assets: CapturedImageAsset[]) => {
@@ -155,6 +165,48 @@ function MainApp() {
     if (result.imported.length > 0) {
       await handleIncomingAssets(result.imported);
     }
+  };
+
+  const handleTrySampleScan = async () => {
+    const sampleUri = createSampleDocumentDataUri();
+    await handleIncomingAssets([
+      {
+        id: `sample_${Date.now()}`,
+        uri: sampleUri,
+        width: 480,
+        height: 640,
+        source: 'gallery',
+        createdAt: Date.now(),
+      },
+    ]);
+  };
+
+  const handleOpenLatestExport = async () => {
+    if (documents.length === 0) {
+      Alert.alert(
+        'No Documents Yet',
+        'Scan or import a document first to export it as a PDF or image.'
+      );
+      return;
+    }
+    await openDocument(documents[0], 'export');
+  };
+
+  const handleOpenLatestEnhance = async () => {
+    if (documents.length === 0) {
+      await handleQuickImport();
+      return;
+    }
+    const pages = await listPagesByDocument(documents[0].id);
+    if (pages.length === 0) {
+      await handleQuickImport();
+      return;
+    }
+    setActiveDoc(documents[0]);
+    setActivePages(pages);
+    setEditingPageId(pages[0].id);
+    setPendingUri(pages[0].originalUri);
+    setRoute('edit');
   };
 
   if (initializing) {
@@ -321,7 +373,7 @@ function MainApp() {
             } else {
               Alert.alert(
                 'Up to Date',
-                'You are running the latest version of SnapDoc (or you are currently offline).'
+                'You are running the latest version of SnapDoc.'
               );
             }
           }}
@@ -344,7 +396,11 @@ function MainApp() {
   return (
     <StudioShell>
       <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
-      <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Top Bar */}
         <View style={styles.topBar}>
           <View style={styles.brandWrap}>
             <BrandHeader />
@@ -379,22 +435,70 @@ function MainApp() {
           </View>
         </View>
 
-        <View style={styles.actionRow}>
+        {/* Search Bar */}
+        <View
+          style={[
+            styles.searchBar,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <Ionicons name="search-outline" size={17} color={colors.textMuted} />
+          <TextInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="Search documents..."
+            placeholderTextColor={colors.textMuted}
+            accessibilityLabel="Search scanned documents"
+            style={[styles.searchInput, { color: colors.textPrimary }]}
+          />
+          {searchQuery.length > 0 ? (
+            <Pressable
+              onPress={() => setSearchQuery('')}
+              accessibilityRole="button"
+              accessibilityLabel="Clear search"
+            >
+              <Ionicons name="close-circle" size={17} color={colors.textMuted} />
+            </Pressable>
+          ) : null}
+        </View>
+
+        {/* Feature Tools Grid */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
+            TOOLS & FEATURES
+          </Text>
+        </View>
+
+        <View style={styles.toolsGrid}>
           <Pressable
             onPress={() => {
               setActiveDoc(null);
               setRoute('capture');
             }}
             accessibilityRole="button"
-            accessibilityLabel="Open camera to scan a new document"
+            accessibilityLabel="Smart Camera Scan"
             style={({ pressed }) => [
-              styles.primaryAction,
-              { backgroundColor: colors.primary, opacity: pressed ? 0.9 : 1 },
+              styles.toolCard,
+              {
+                backgroundColor: colors.primary,
+                borderColor: colors.primary,
+                opacity: pressed ? 0.9 : 1,
+              },
             ]}
           >
-            <Ionicons name="camera-outline" size={18} color={colors.primaryText} />
-            <Text style={[styles.primaryActionText, { color: colors.primaryText }]}>
-              Scan Document
+            <View style={[styles.toolIconBox, { backgroundColor: 'rgba(255,255,255,0.16)' }]}>
+              <Ionicons name="camera-outline" size={20} color={colors.primaryText} />
+            </View>
+            <Text style={[styles.toolTitle, { color: colors.primaryText }]}>
+              Smart Scan
+            </Text>
+            <Text
+              style={[
+                styles.toolDesc,
+                { color: resolvedScheme === 'dark' ? '#334155' : '#CBD5E1' },
+              ]}
+            >
+              Capture & auto-crop
             </Text>
           </Pressable>
 
@@ -404,37 +508,91 @@ function MainApp() {
               handleQuickImport();
             }}
             accessibilityRole="button"
-            accessibilityLabel="Import document images from gallery"
+            accessibilityLabel="Import Photos"
             style={({ pressed }) => [
-              styles.secondaryAction,
+              styles.toolCard,
               {
-                borderColor: colors.border,
                 backgroundColor: colors.surface,
+                borderColor: colors.border,
                 opacity: pressed ? 0.85 : 1,
               },
             ]}
           >
-            <Ionicons name="images-outline" size={18} color={colors.textPrimary} />
-            <Text style={[styles.secondaryActionText, { color: colors.textPrimary }]}>
-              Import
+            <View style={[styles.toolIconBox, { backgroundColor: colors.accentSoft }]}>
+              <Ionicons name="images-outline" size={20} color={colors.accent} />
+            </View>
+            <Text style={[styles.toolTitle, { color: colors.textPrimary }]}>
+              Import Photos
+            </Text>
+            <Text style={[styles.toolDesc, { color: colors.textSecondary }]}>
+              JPG, PNG & WebP
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={handleOpenLatestEnhance}
+            accessibilityRole="button"
+            accessibilityLabel="Crop and Enhance Filters"
+            style={({ pressed }) => [
+              styles.toolCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                opacity: pressed ? 0.85 : 1,
+              },
+            ]}
+          >
+            <View style={[styles.toolIconBox, { backgroundColor: colors.accentSoft }]}>
+              <Ionicons name="color-wand-outline" size={20} color={colors.accent} />
+            </View>
+            <Text style={[styles.toolTitle, { color: colors.textPrimary }]}>
+              Crop & Filters
+            </Text>
+            <Text style={[styles.toolDesc, { color: colors.textSecondary }]}>
+              Magic Color & B&W
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={handleOpenLatestExport}
+            accessibilityRole="button"
+            accessibilityLabel="Export to PDF or Image"
+            style={({ pressed }) => [
+              styles.toolCard,
+              {
+                backgroundColor: colors.surface,
+                borderColor: colors.border,
+                opacity: pressed ? 0.85 : 1,
+              },
+            ]}
+          >
+            <View style={[styles.toolIconBox, { backgroundColor: colors.accentSoft }]}>
+              <Ionicons name="document-text-outline" size={20} color={colors.accent} />
+            </View>
+            <Text style={[styles.toolTitle, { color: colors.textPrimary }]}>
+              PDF & Image
+            </Text>
+            <Text style={[styles.toolDesc, { color: colors.textSecondary }]}>
+              Export A4 or JPG/PNG
             </Text>
           </Pressable>
         </View>
 
+        {/* Recent Documents */}
         <View style={styles.sectionHeader}>
           <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
             RECENT DOCUMENTS
           </Text>
           <Text style={[styles.sectionCount, { color: colors.textMuted }]}>
-            {documents.length}
+            {filteredDocuments.length}
           </Text>
         </View>
 
         <FlatList
-          data={documents}
+          data={filteredDocuments}
           keyExtractor={(item) => item.id}
+          scrollEnabled={false}
           contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
           ListEmptyComponent={
             <View
               style={[
@@ -443,21 +601,43 @@ function MainApp() {
               ]}
             >
               <View style={[styles.emptyIconWrap, { backgroundColor: colors.accentSoft }]}>
-                <Ionicons name="scan-outline" size={26} color={colors.accent} />
+                <Ionicons name="scan-outline" size={24} color={colors.accent} />
               </View>
               <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                Your library is empty
+                {searchQuery ? 'No matching documents' : 'No scanned documents yet'}
               </Text>
               <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                Capture a document with your camera or import photos to crop, enhance, and export as PDF or image.
+                {searchQuery
+                  ? 'Try a different search term.'
+                  : 'Use Smart Scan, Import Photos, or try a sample document to preview cropping, filters, and PDF export.'}
               </Text>
+              {!searchQuery ? (
+                <Pressable
+                  onPress={handleTrySampleScan}
+                  accessibilityRole="button"
+                  accessibilityLabel="Try a sample document scan"
+                  style={({ pressed }) => [
+                    styles.sampleBtn,
+                    {
+                      borderColor: colors.border,
+                      backgroundColor: colors.background,
+                      opacity: pressed ? 0.8 : 1,
+                    },
+                  ]}
+                >
+                  <Ionicons name="sparkles-outline" size={15} color={colors.accent} />
+                  <Text style={[styles.sampleBtnText, { color: colors.accent }]}>
+                    Try Sample Document
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
           }
           renderItem={({ item }) => {
             const formattedDate = formatRelativeDate(item.updatedAt);
             return (
               <Pressable
-                onPress={() => openDocument(item)}
+                onPress={() => openDocument(item, 'document')}
                 accessibilityRole="button"
                 accessibilityLabel={`Open document ${item.title}, ${item.pageCount} pages, updated ${formattedDate}`}
                 style={({ pressed }) => [
@@ -493,12 +673,19 @@ function MainApp() {
                     {item.pageCount} {item.pageCount === 1 ? 'page' : 'pages'} • {formattedDate}
                   </Text>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                <Pressable
+                  onPress={() => openDocument(item, 'export')}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Export ${item.title}`}
+                  style={[styles.quickExportBtn, { backgroundColor: colors.accentSoft }]}
+                >
+                  <Ionicons name="share-outline" size={16} color={colors.accent} />
+                </Pressable>
               </Pressable>
             );
           }}
         />
-      </View>
+      </ScrollView>
       <UpdateModal
         manifest={availableUpdate}
         onDismiss={() => setAvailableUpdate(null)}
@@ -521,11 +708,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  container: {
-    flex: 1,
+  scrollContainer: {
     paddingHorizontal: 20,
     paddingTop: 18,
-    gap: 16,
+    paddingBottom: 32,
+    gap: 14,
   },
   topBar: {
     flexDirection: 'row',
@@ -549,42 +736,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionRow: {
+  searchBar: {
     flexDirection: 'row',
-    gap: 10,
-  },
-  primaryAction: {
-    flex: 1.5,
-    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000000',
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
-  primaryActionText: {
-    fontSize: 15,
-    fontWeight: '600',
-    letterSpacing: -0.1,
-  },
-  secondaryAction: {
-    flex: 1,
-    flexDirection: 'row',
-    gap: 7,
-    borderRadius: 14,
     borderWidth: 1,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
-  secondaryActionText: {
-    fontSize: 15,
-    fontWeight: '600',
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    paddingVertical: 0,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -602,34 +766,79 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  listContent: {
+  toolsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
-    paddingBottom: 28,
   },
-  emptyCard: {
-    borderRadius: 18,
+  toolCard: {
+    width: '48.4%',
+    borderRadius: 16,
     borderWidth: 1,
-    padding: 28,
-    gap: 10,
-    alignItems: 'center',
+    padding: 14,
+    gap: 6,
+    shadowColor: '#000000',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 1,
   },
-  emptyIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 14,
+  toolIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 4,
   },
-  emptyTitle: {
-    fontSize: 17,
+  toolTitle: {
+    fontSize: 15,
     fontWeight: '700',
-    letterSpacing: -0.3,
+    letterSpacing: -0.2,
+  },
+  toolDesc: {
+    fontSize: 12,
+  },
+  listContent: {
+    gap: 10,
+  },
+  emptyCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 24,
+    gap: 10,
+    alignItems: 'center',
+  },
+  emptyIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
   emptySubtitle: {
     fontSize: 13.5,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  sampleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    marginTop: 4,
+  },
+  sampleBtnText: {
+    fontSize: 13.5,
+    fontWeight: '600',
   },
   pageCard: {
     flexDirection: 'row',
@@ -664,5 +873,12 @@ const styles = StyleSheet.create({
   },
   pageSubtitle: {
     fontSize: 12.5,
+  },
+  quickExportBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
