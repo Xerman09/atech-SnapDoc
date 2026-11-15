@@ -3,6 +3,9 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Fixed (CI)
+- Removed `android-actions/setup-android@v3` from `.github/workflows/build-apk.yml` (which failed looking for deprecated `tools` package) so Gradle uses the pre-installed Android SDK on `ubuntu-latest`.
+
 ### Added (CI / APK Build)
 - Added `.github/workflows/build-apk.yml` to automatically run `typecheck`, `test`, `expo prebuild --platform android`, and Gradle `assembleRelease` (`arm64-v8a,armeabi-v7a`, ProGuard/R8, Hermes), uploading `SnapDoc-release-apk` as a downloadable artifact.
 
