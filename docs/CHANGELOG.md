@@ -3,6 +3,9 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Release v1.0.2
+- Bumped app version to `1.0.2` (`android.versionCode: 2`) in `app.json`, `package.json`, and `src/constants/legal.ts` to publish the Android image-processing & file I/O fix (`Buffer` polyfill + awaited `expo-file-system` `write`/`copySync`) as an OTA/in-app update.
+
 ### Fixed (Android Document Processing & File I/O)
 - Added `buffer` polyfill (`globalThis.Buffer`) in `index.ts` and `src/services/cv/imagePipeline.ts` so `jpeg-js` (`Buffer.from(...)`) works reliably in React Native Hermes on Android.
 - Fixed async `expo-file-system` `File.copy` / `File.write` race conditions: switched `saveScanImageToAppStorage` in `src/services/storage/localFiles.ts` to `copySync(..., { overwrite: true })`, updated `processScanPage` in `src/services/cv/imagePipeline.ts` to `create` + `await outFile.write(new Uint8Array(encoded.data))`, and awaited `write` / `copy` in `src/services/export/exportService.ts`.
