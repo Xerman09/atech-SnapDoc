@@ -3,6 +3,9 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Fixed
+- Added `update-manifest.json` at repository root and restricted `checkForInAppUpdate()` to `Platform.OS === 'android'` so Web previews do not log a 404 console error.
+
 ### Changed (UI Copy Cleanup)
 - Removed technical badges and internal labels (`LOCAL` badge, `PRIVACY-FIRST ARCHITECTURE` eyebrow, internal filter slugs, and architecture jargon) across `BrandHeader.tsx`, `OnboardingConsentScreen.tsx`, `DocumentDetailScreen.tsx`, `UpdateModal.tsx`, and `legal.ts`.
 

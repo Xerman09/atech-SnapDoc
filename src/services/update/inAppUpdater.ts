@@ -42,7 +42,7 @@ export function compareSemver(a: string, b: string): number {
 export async function checkForInAppUpdate(
   manifestUrl: string = UPDATE_MANIFEST_URL
 ): Promise<UpdateManifest | null> {
-  if (!manifestUrl.startsWith('https://')) {
+  if (Platform.OS !== 'android' || !manifestUrl.startsWith('https://')) {
     return null;
   }
 
