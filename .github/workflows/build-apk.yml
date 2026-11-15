@@ -1,4 +1,4 @@
-name: Build Compressed Android APK
+name: Build & Publish Compressed Android APK
 
 on:
   push:
@@ -6,8 +6,12 @@ on:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-apk:
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     runs-on: ubuntu-latest
 
     steps:
@@ -34,6 +38,12 @@ jobs:
           npm run typecheck
           npm test
 
+      - name: Read app version
+        id: meta
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Expo Prebuild (Android)
         run: npx expo prebuild --platform android --non-interactive
 
@@ -43,10 +53,64 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a --no-daemon
 
+      - name: Prepare versioned APK and SHA-256
+        id: apk
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          RAW_APK=$(ls android/app/build/outputs/apk/release/*.apk | head -n 1)
+          APK_NAME="snapdoc-${VERSION}.apk"
+          cp "$RAW_APK" "$APK_NAME"
+          SHA256=$(sha256sum "$APK_NAME" | awk '{print $1}')
+          echo "apk_name=$APK_NAME" >> "$GITHUB_OUTPUT"
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
+
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: SnapDoc-release-apk
-          path: android/app/build/outputs/apk/release/*.apk
+          path: ${{ steps.apk.outputs.apk_name }}
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          TAG="v${VERSION}"
+          APK_NAME="${{ steps.apk.outputs.apk_name }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK_NAME" --clobber
+          else
+            gh release create "$TAG" "$APK_NAME" --title "SnapDoc $TAG" --notes "Automated compressed Android release ($TAG)."
+          fi
+
+      - name: Update update-manifest.json
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          APK_NAME="${{ steps.apk.outputs.apk_name }}"
+          SHA256="${{ steps.apk.outputs.sha256 }}"
+          APK_URL="https://github.com/${{ github.repository }}/releases/download/v${VERSION}/${APK_NAME}"
+          node -e "
+            const fs = require('fs');
+            const manifest = {
+              version: process.env.VERSION,
+              apkUrl: process.env.APK_URL,
+              sha256: process.env.SHA256,
+              notes: 'New SnapDoc v' + process.env.VERSION + ' release with improved scanning, safe area fixes, and shadow-removal filters.',
+              releasedAt: Date.now()
+            };
+            fs.writeFileSync('update-manifest.json', JSON.stringify(manifest, null, 2) + '\n');
+          "
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add update-manifest.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: publish update-manifest.json for v${VERSION} [skip ci]"
+            git push origin main
+          fi
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+          APK_URL: https://github.com/${{ github.repository }}/releases/download/v${{ steps.meta.outputs.version }}/${{ steps.apk.outputs.apk_name }}
+          SHA256: ${{ steps.apk.outputs.sha256 }}

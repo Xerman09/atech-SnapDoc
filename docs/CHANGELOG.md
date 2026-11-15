@@ -3,6 +3,10 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Added (Automated In-App Update Releases)
+- Bumped app version to `1.0.1` in `app.json`, `package.json`, and `src/constants/legal.ts`.
+- Updated `.github/workflows/build-apk.yml` to automatically publish versioned APKs (`snapdoc-<version>.apk`) to **GitHub Releases**, compute real SHA-256 checksums, and update `update-manifest.json` on `main` (`[skip ci]`) so installed apps receive automatic in-app update popups.
+
 ### Improved (CamScanner-Grade Crop & Filter Precision)
 - Fixed letterbox aspect-ratio mismatch in `CropAndEnhanceScreen.tsx` by measuring natural image dimensions via `Image.getSize()` and pinning the 4-point crop overlay directly to the rendered image bounds (`imgRect`).
 - Added 3x3 Gaussian smoothing and weighted Sobel edge localization in `src/services/cv/edgeDetector.ts` to reduce desk-texture noise.
