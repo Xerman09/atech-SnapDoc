@@ -1,7 +1,11 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { useColorScheme } from 'react-native';
-import { AppPalette, darkPalette, lightPalette } from './colors';
+import {
+  getStoredThemeMode,
+  setStoredThemeMode,
+} from '../services/storage/securePrefs';
 import { ThemeMode } from '../types/scanner';
+import { AppPalette, darkPalette, lightPalette } from './colors';
 
 interface ThemeContextValue {
   mode: ThemeMode;
@@ -15,7 +19,18 @@ const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
-  const [mode, setMode] = useState<ThemeMode>('system');
+  const [mode, setModeState] = useState<ThemeMode>('system');
+
+  useEffect(() => {
+    getStoredThemeMode().then((saved) => {
+      if (saved) setModeState(saved);
+    });
+  }, []);
+
+  const setMode = (nextMode: ThemeMode) => {
+    setModeState(nextMode);
+    setStoredThemeMode(nextMode);
+  };
 
   const resolvedScheme: 'light' | 'dark' =
     mode === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : mode;

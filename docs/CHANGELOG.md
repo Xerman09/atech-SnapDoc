@@ -4,6 +4,13 @@ All notable changes to **SnapDoc (`scanner_app`)** will be documented in this fi
 
 ## [Unreleased] — Nov 15, 2026
 ### Added
+- **Phase 5: Multi-Page Workspace & Local Encrypted Storage**:
+  - Installed `expo-sqlite` and `expo-secure-store` (SDK 58 compatible).
+  - Built parameterized SQLite database layer (`src/services/storage/database.ts`) with `zod` schema validation and input sanitization for documents and multi-page ordering.
+  - Built encrypted preferences storage (`src/services/storage/securePrefs.ts`) for consent and theme persistence (`ThemeContext.tsx`).
+  - Built `src/screens/DocumentDetailScreen.tsx` for multi-page document viewing, renaming, reordering, adding, editing, and deleting pages.
+
+### Phase 4 (Completed)
 - **Phase 4: Edge Detection, Perspective Crop & Scan Filters**:
   - Installed `expo-image-manipulator`, `react-native-svg`, and `jpeg-js`.
   - Added projective homography & bilinear perspective warp (`src/services/cv/geometry.ts`).

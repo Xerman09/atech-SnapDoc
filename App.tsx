@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   FlatList,
   Image,
@@ -14,6 +15,7 @@ import { BrandHeader } from './src/components/BrandHeader';
 import { LegalDocId } from './src/constants/legal';
 import { CaptureScreen } from './src/screens/CaptureScreen';
 import { CropAndEnhanceScreen } from './src/screens/CropAndEnhanceScreen';
+import { DocumentDetailScreen } from './src/screens/DocumentDetailScreen';
 import { LegalDocumentScreen } from './src/screens/LegalDocumentScreen';
 import { OnboardingConsentScreen } from './src/screens/OnboardingConsentScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
@@ -21,30 +23,76 @@ import {
   CapturedImageAsset,
   pickAndValidateImages,
 } from './src/services/capture/importImages';
+import {
+  addPageToDocument,
+  createDocument,
+  deleteDocument,
+  deletePage,
+  listDocuments,
+  listPagesByDocument,
+  movePageOrder,
+  renameDocument,
+  updatePage,
+  wipeAllDatabaseData,
+} from './src/services/storage/database';
 import { deleteAllScanFiles } from './src/services/storage/localFiles';
+import {
+  clearSecurePrefs,
+  getStoredConsent,
+  setStoredConsent,
+} from './src/services/storage/securePrefs';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
-import { FilterPreset } from './src/types/scanner';
-import { formatRelativeDate } from './src/utils/dateFormat';
+import { ScanDocument, ScannedPage } from './src/types/scanner';
+import { formatRelativeDate, formatShortDate } from './src/utils/dateFormat';
 
-type ActiveRoute = 'onboarding' | 'home' | 'capture' | 'edit' | 'settings' | 'legal';
-
-interface LocalScanItem {
-  id: string;
-  originalUri: string;
-  processedUri: string;
-  source: 'camera' | 'gallery';
-  filter: FilterPreset;
-  createdAt: number;
-}
+type ActiveRoute =
+  | 'onboarding'
+  | 'home'
+  | 'capture'
+  | 'edit'
+  | 'document'
+  | 'settings'
+  | 'legal';
 
 function MainApp() {
   const { colors, resolvedScheme } = useTheme();
+  const [initializing, setInitializing] = useState(true);
   const [hasConsented, setHasConsented] = useState(false);
   const [route, setRoute] = useState<ActiveRoute>('onboarding');
   const [legalReturnRoute, setLegalReturnRoute] = useState<'onboarding' | 'settings'>('onboarding');
   const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocId>('privacy');
-  const [scans, setScans] = useState<LocalScanItem[]>([]);
-  const [pendingAsset, setPendingAsset] = useState<CapturedImageAsset | null>(null);
+
+  const [documents, setDocuments] = useState<ScanDocument[]>([]);
+  const [activeDoc, setActiveDoc] = useState<ScanDocument | null>(null);
+  const [activePages, setActivePages] = useState<ScannedPage[]>([]);
+  const [editingPageId, setEditingPageId] = useState<string | null>(null);
+  const [pendingUri, setPendingUri] = useState<string | null>(null);
+
+  const refreshDocuments = useCallback(async () => {
+    const docs = await listDocuments();
+    setDocuments(docs);
+    if (activeDoc) {
+      const updated = docs.find((d) => d.id === activeDoc.id) ?? null;
+      setActiveDoc(updated);
+      if (updated) {
+        const pages = await listPagesByDocument(updated.id);
+        setActivePages(pages);
+      } else {
+        setActivePages([]);
+      }
+    }
+  }, [activeDoc]);
+
+  useEffect(() => {
+    (async () => {
+      const consented = await getStoredConsent();
+      const docs = await listDocuments();
+      setDocuments(docs);
+      setHasConsented(consented);
+      setRoute(consented ? 'home' : 'onboarding');
+      setInitializing(false);
+    })();
+  }, []);
 
   const openLegal = (docId: LegalDocId, returnTo: 'onboarding' | 'settings') => {
     setActiveLegalDoc(docId);
@@ -52,21 +100,35 @@ function MainApp() {
     setRoute('legal');
   };
 
-  const handleIncomingAssets = (assets: CapturedImageAsset[]) => {
+  const openDocument = async (doc: ScanDocument) => {
+    const pages = await listPagesByDocument(doc.id);
+    setActiveDoc(doc);
+    setActivePages(pages);
+    setRoute('document');
+  };
+
+  const handleIncomingAssets = async (assets: CapturedImageAsset[]) => {
     if (assets.length === 0) return;
-    // Open the first newly captured/imported image in the crop & filter editor
-    setPendingAsset(assets[0]);
-    if (assets.length > 1) {
-      const rest: LocalScanItem[] = assets.slice(1).map((a) => ({
-        id: a.id,
-        originalUri: a.uri,
-        processedUri: a.uri,
-        source: a.source,
-        filter: 'original',
-        createdAt: a.createdAt,
-      }));
-      setScans((prev) => [...rest, ...prev]);
+
+    let targetDoc = activeDoc;
+    if (!targetDoc) {
+      targetDoc = await createDocument(`Scan ${formatShortDate(Date.now())}`);
+      setActiveDoc(targetDoc);
     }
+
+    // Save any extra batch-imported images directly as pages
+    for (let i = 1; i < assets.length; i++) {
+      await addPageToDocument({
+        documentId: targetDoc.id,
+        originalUri: assets[i].uri,
+        processedUri: assets[i].uri,
+        filter: 'original',
+        adjustments: { brightness: 0, contrast: 0, sharpness: 15 },
+      });
+    }
+
+    setEditingPageId(null);
+    setPendingUri(assets[0].uri);
     setRoute('edit');
   };
 
@@ -79,9 +141,17 @@ function MainApp() {
       Alert.alert('Some Images Were Skipped', summary);
     }
     if (result.imported.length > 0) {
-      handleIncomingAssets(result.imported);
+      await handleIncomingAssets(result.imported);
     }
   };
+
+  if (initializing) {
+    return (
+      <SafeAreaView style={[styles.centered, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </SafeAreaView>
+    );
+  }
 
   if (route === 'legal') {
     return (
@@ -100,7 +170,8 @@ function MainApp() {
       <>
         <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
         <OnboardingConsentScreen
-          onAccept={() => {
+          onAccept={async () => {
+            await setStoredConsent(true);
             setHasConsented(true);
             setRoute('home');
           }}
@@ -116,36 +187,93 @@ function MainApp() {
         <StatusBar style="light" />
         <CaptureScreen
           onCaptured={handleIncomingAssets}
-          onCancel={() => setRoute('home')}
+          onCancel={() => setRoute(activeDoc ? 'document' : 'home')}
         />
       </>
     );
   }
 
-  if (route === 'edit' && pendingAsset) {
+  if (route === 'edit' && pendingUri && activeDoc) {
     return (
       <>
         <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
         <CropAndEnhanceScreen
-          initialUri={pendingAsset.uri}
-          onSave={(edited) => {
-            const newItem: LocalScanItem = {
-              id: pendingAsset.id,
-              originalUri: edited.originalUri,
-              processedUri: edited.processedUri,
-              source: pendingAsset.source,
-              filter: edited.filter,
-              createdAt: pendingAsset.createdAt,
-            };
-            setScans((prev) => [
-              newItem,
-              ...prev.filter((item) => item.id !== newItem.id),
-            ]);
-            setPendingAsset(null);
+          initialUri={pendingUri}
+          onSave={async (edited) => {
+            if (editingPageId) {
+              await updatePage({
+                pageId: editingPageId,
+                documentId: activeDoc.id,
+                originalUri: edited.originalUri,
+                processedUri: edited.processedUri,
+                cropQuad: edited.cropQuad,
+                filter: edited.filter,
+                adjustments: edited.adjustments,
+              });
+            } else {
+              await addPageToDocument({
+                documentId: activeDoc.id,
+                originalUri: edited.originalUri,
+                processedUri: edited.processedUri,
+                cropQuad: edited.cropQuad,
+                filter: edited.filter,
+                adjustments: edited.adjustments,
+              });
+            }
+            setPendingUri(null);
+            setEditingPageId(null);
+            await refreshDocuments();
+            setRoute('document');
+          }}
+          onCancel={async () => {
+            setPendingUri(null);
+            setEditingPageId(null);
+            await refreshDocuments();
+            setRoute(activeDoc ? 'document' : 'home');
+          }}
+        />
+      </>
+    );
+  }
+
+  if (route === 'document' && activeDoc) {
+    return (
+      <>
+        <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
+        <DocumentDetailScreen
+          document={activeDoc}
+          pages={activePages}
+          onBack={async () => {
+            setActiveDoc(null);
+            setActivePages([]);
+            await refreshDocuments();
             setRoute('home');
           }}
-          onCancel={() => {
-            setPendingAsset(null);
+          onRename={async (newTitle) => {
+            await renameDocument(activeDoc.id, newTitle);
+            await refreshDocuments();
+          }}
+          onAddPageCamera={() => setRoute('capture')}
+          onAddPageGallery={handleQuickImport}
+          onEditPage={(page) => {
+            setEditingPageId(page.id);
+            setPendingUri(page.originalUri);
+            setRoute('edit');
+          }}
+          onMovePage={async (pageId, direction) => {
+            await movePageOrder(activeDoc.id, pageId, direction);
+            await refreshDocuments();
+          }}
+          onDeletePage={async (pageId) => {
+            await deletePage(activeDoc.id, pageId);
+            await refreshDocuments();
+          }}
+          onDeleteDocument={async () => {
+            await deleteDocument(activeDoc.id);
+            setActiveDoc(null);
+            setActivePages([]);
+            const docs = await listDocuments();
+            setDocuments(docs);
             setRoute('home');
           }}
         />
@@ -160,10 +288,14 @@ function MainApp() {
         <SettingsScreen
           onBack={() => setRoute('home')}
           onOpenLegal={(docId) => openLegal(docId, 'settings')}
-          onDeleteAllData={() => {
+          onDeleteAllData={async () => {
+            await wipeAllDatabaseData();
             deleteAllScanFiles();
-            setScans([]);
-            setPendingAsset(null);
+            await clearSecurePrefs();
+            setDocuments([]);
+            setActiveDoc(null);
+            setActivePages([]);
+            setPendingUri(null);
             setHasConsented(false);
             setRoute('onboarding');
           }}
@@ -192,9 +324,12 @@ function MainApp() {
 
         <View style={styles.actionRow}>
           <Pressable
-            onPress={() => setRoute('capture')}
+            onPress={() => {
+              setActiveDoc(null);
+              setRoute('capture');
+            }}
             accessibilityRole="button"
-            accessibilityLabel="Open camera to scan a document"
+            accessibilityLabel="Open camera to scan a new document"
             style={[styles.primaryAction, { backgroundColor: colors.primary }]}
           >
             <Text style={[styles.primaryActionText, { color: colors.primaryText }]}>
@@ -203,7 +338,10 @@ function MainApp() {
           </Pressable>
 
           <Pressable
-            onPress={handleQuickImport}
+            onPress={() => {
+              setActiveDoc(null);
+              handleQuickImport();
+            }}
             accessibilityRole="button"
             accessibilityLabel="Import document images from gallery"
             style={[styles.secondaryAction, { borderColor: colors.border, backgroundColor: colors.surface }]}
@@ -215,49 +353,45 @@ function MainApp() {
         </View>
 
         <FlatList
-          data={scans}
+          data={documents}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={
             <View style={[styles.emptyCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Text style={[styles.emptyTitle, { color: colors.textPrimary }]}>
-                No Scans Yet
+                No Documents Yet
               </Text>
               <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-                Tap "Scan Camera" or "Import Images" to capture, crop, and enhance a document offline.
+                Tap "Scan Camera" or "Import Images" to create your first multi-page offline document.
               </Text>
             </View>
           }
-          renderItem={({ item, index }) => {
-            const formattedDate = formatRelativeDate(item.createdAt);
+          renderItem={({ item }) => {
+            const formattedDate = formatRelativeDate(item.updatedAt);
             return (
               <Pressable
-                onPress={() => {
-                  setPendingAsset({
-                    id: item.id,
-                    uri: item.originalUri,
-                    width: 0,
-                    height: 0,
-                    source: item.source,
-                    createdAt: item.createdAt,
-                  });
-                  setRoute('edit');
-                }}
+                onPress={() => openDocument(item)}
                 accessibilityRole="button"
-                accessibilityLabel={`Edit scanned page ${scans.length - index}, filter ${item.filter}`}
+                accessibilityLabel={`Open document ${item.title}, ${item.pageCount} pages, updated ${formattedDate}`}
                 style={[styles.pageCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
               >
-                <Image
-                  source={{ uri: item.processedUri }}
-                  style={[styles.thumb, { borderColor: colors.border }]}
-                  accessibilityLabel={`Scanned page ${scans.length - index} captured ${formattedDate}`}
-                />
+                {item.coverUri ? (
+                  <Image
+                    source={{ uri: item.coverUri }}
+                    style={[styles.thumb, { borderColor: colors.border }]}
+                    accessibilityLabel={`Cover page of ${item.title}`}
+                  />
+                ) : (
+                  <View style={[styles.thumbPlaceholder, { borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}>
+                    <Text style={[styles.thumbPlaceholderText, { color: colors.textSecondary }]}>DOC</Text>
+                  </View>
+                )}
                 <View style={styles.pageMeta}>
-                  <Text style={[styles.pageTitle, { color: colors.textPrimary }]}>
-                    Scanned Page {scans.length - index}
+                  <Text style={[styles.pageTitle, { color: colors.textPrimary }]} numberOfLines={1}>
+                    {item.title}
                   </Text>
                   <Text style={[styles.pageSubtitle, { color: colors.textSecondary }]}>
-                    {item.filter.replace('_', ' ').toUpperCase()} • {formattedDate}
+                    {item.pageCount} {item.pageCount === 1 ? 'page' : 'pages'} • {formattedDate}
                   </Text>
                 </View>
               </Pressable>
@@ -280,6 +414,11 @@ export default function App() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   container: {
     flex: 1,
@@ -363,6 +502,18 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: 8,
     borderWidth: 1,
+  },
+  thumbPlaceholder: {
+    width: 56,
+    height: 72,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  thumbPlaceholderText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   pageMeta: {
     flex: 1,

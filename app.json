@@ -33,7 +33,9 @@
         {
           "photosPermission": "SnapDoc accesses selected photos offline so you can convert them into scanned PDFs or images."
         }
-      ]
+      ],
+      "expo-sqlite",
+      "expo-secure-store"
     ]
   }
 }
