@@ -3,6 +3,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import { PDFDocument } from 'pdf-lib';
+import { Platform } from 'react-native';
 import { ScanDocument, ScannedPage } from '../../types/scanner';
 import { sanitizeFilename } from '../../utils/fileValidation';
 import { sanitizeDocumentTitle } from '../storage/database';
@@ -128,8 +129,17 @@ export async function generateDocumentPdf(params: {
   }
 
   const pdfBytes = await pdfDoc.save();
-  const exportsDir = getExportsDirectory();
   const fileName = sanitizeFilename(`${safeTitle}_${Date.now()}.pdf`, 'pdf');
+
+  if (Platform.OS === 'web') {
+    const base64Pdf = uint8ArrayToBase64(pdfBytes);
+    return {
+      uri: `data:application/pdf;base64,${base64Pdf}`,
+      sizeBytes: pdfBytes.length,
+    };
+  }
+
+  const exportsDir = getExportsDirectory();
   const outFile = new File(exportsDir, fileName);
   outFile.write(uint8ArrayToBase64(pdfBytes), { encoding: 'base64' });
 
@@ -160,9 +170,14 @@ export async function prepareExportImage(params: {
     format: saveFormat,
   });
 
-  const exportsDir = getExportsDirectory();
   const ext = format === 'png' ? 'png' : 'jpg';
   const fileName = sanitizeFilename(`${baseTitle}_page_${pageNumber}.${ext}`, ext);
+
+  if (Platform.OS === 'web') {
+    return { uri: result.uri };
+  }
+
+  const exportsDir = getExportsDirectory();
   const targetFile = new File(exportsDir, fileName);
   new File(result.uri).copy(targetFile);
 
@@ -170,6 +185,18 @@ export async function prepareExportImage(params: {
 }
 
 export async function shareLocalFile(uri: string, mimeType: string, title: string): Promise<void> {
+  if (Platform.OS === 'web' && typeof globalThis.document !== 'undefined') {
+    const link = globalThis.document.createElement('a');
+    link.href = uri;
+    link.download = sanitizeFilename(
+      title,
+      mimeType === 'application/pdf' ? 'pdf' : mimeType === 'image/png' ? 'png' : 'jpg'
+    );
+    globalThis.document.body.appendChild(link);
+    link.click();
+    globalThis.document.body.removeChild(link);
+    return;
+  }
   const available = await Sharing.isAvailableAsync();
   if (!available) {
     throw new Error('Sharing is not available on this device.');

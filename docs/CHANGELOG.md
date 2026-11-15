@@ -3,6 +3,11 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Fixed (QA Audit)
+- Added `metro.config.js` with `unstable_enablePackageExports = false` to fix Metro Web `tslib.default` (`__extends`) runtime crash.
+- Fixed binary SHA-256 checksum verification in `src/services/update/inAppUpdater.ts` to use `Crypto.digest(SHA256, Uint8Array)` instead of UTF-8 string hashing.
+- Added clean Web (`Platform.OS === 'web'`) fallbacks for local storage (`src/services/storage/webDbFallback.ts`, `database.ts`, `securePrefs.ts`, `localFiles.ts`), image processing (`imagePipeline.ts`), and browser PDF/Image file downloads (`exportService.ts`).
+
 ### Added
 - **Phase 8: Security Audit, Unit Tests & Verification**:
   - Installed `vitest` and added `test` and `typecheck` scripts in `package.json`.

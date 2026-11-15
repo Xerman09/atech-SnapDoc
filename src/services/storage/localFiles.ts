@@ -1,4 +1,5 @@
 import { Directory, File, Paths } from 'expo-file-system';
+import { Platform } from 'react-native';
 import { sanitizeFilename } from '../../utils/fileValidation';
 
 export function getScansDirectory(): Directory {
@@ -11,12 +12,16 @@ export function getScansDirectory(): Directory {
 
 /**
  * Copies a validated image URI into app-private document storage with a sanitized filename.
+ * On Web, returns the source URI directly.
  */
 export function saveScanImageToAppStorage(
   sourceUri: string,
   preferredName?: string | null,
   extension = 'jpg'
 ): string {
+  if (Platform.OS === 'web') {
+    return sourceUri;
+  }
   const scansDir = getScansDirectory();
   const baseName = sanitizeFilename(
     preferredName ?? `scan_${Date.now()}.${extension}`,
@@ -33,6 +38,7 @@ export function saveScanImageToAppStorage(
  * Deletes a single local scan file if it exists inside app storage.
  */
 export function deleteLocalScanFile(uri: string): void {
+  if (Platform.OS === 'web') return;
   try {
     const file = new File(uri);
     if (file.exists) {
@@ -47,6 +53,7 @@ export function deleteLocalScanFile(uri: string): void {
  * Permanently erases all locally stored scan files.
  */
 export function deleteAllScanFiles(): void {
+  if (Platform.OS === 'web') return;
   try {
     const dir = new Directory(Paths.document, 'scans');
     if (dir.exists) {

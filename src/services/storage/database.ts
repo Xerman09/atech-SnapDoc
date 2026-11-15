@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { Platform } from 'react-native';
 import { z } from 'zod';
 import {
   AdjustmentSettings,
@@ -8,6 +9,18 @@ import {
   ScannedPage,
 } from '../../types/scanner';
 import { deleteLocalScanFile } from './localFiles';
+import {
+  webAddPage,
+  webCreateDocument,
+  webDeleteDocument,
+  webDeletePage,
+  webListDocuments,
+  webListPages,
+  webMovePage,
+  webRenameDocument,
+  webUpdatePage,
+  webWipeAll,
+} from './webDbFallback';
 
 const DB_NAME = 'snapdoc.db';
 
@@ -139,6 +152,7 @@ function mapPageRow(row: PageRow): ScannedPage {
 }
 
 export async function listDocuments(): Promise<ScanDocument[]> {
+  if (Platform.OS === 'web') return webListDocuments();
   const db = await getDb();
   const rows = await db.getAllAsync<DocumentRow>(
     'SELECT id, title, page_count, cover_uri, created_at, updated_at FROM documents ORDER BY updated_at DESC'
@@ -147,11 +161,21 @@ export async function listDocuments(): Promise<ScanDocument[]> {
 }
 
 export async function createDocument(title: string): Promise<ScanDocument> {
-  const db = await getDb();
   const safeTitle = sanitizeDocumentTitle(title);
   const now = Date.now();
   const id = `doc_${now}_${Math.random().toString(36).slice(2, 7)}`;
 
+  if (Platform.OS === 'web') {
+    return webCreateDocument({
+      id,
+      title: safeTitle,
+      pageCount: 0,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  const db = await getDb();
   await db.runAsync(
     'INSERT INTO documents (id, title, page_count, cover_uri, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
     [id, safeTitle, 0, null, now, now]
@@ -167,8 +191,9 @@ export async function createDocument(title: string): Promise<ScanDocument> {
 }
 
 export async function renameDocument(documentId: string, newTitle: string): Promise<string> {
-  const db = await getDb();
   const safeTitle = sanitizeDocumentTitle(newTitle);
+  if (Platform.OS === 'web') return webRenameDocument(documentId, safeTitle);
+  const db = await getDb();
   const now = Date.now();
   await db.runAsync(
     'UPDATE documents SET title = ?, updated_at = ? WHERE id = ?',
@@ -178,6 +203,7 @@ export async function renameDocument(documentId: string, newTitle: string): Prom
 }
 
 export async function listPagesByDocument(documentId: string): Promise<ScannedPage[]> {
+  if (Platform.OS === 'web') return webListPages(documentId);
   const db = await getDb();
   const rows = await db.getAllAsync<PageRow>(
     'SELECT * FROM pages WHERE document_id = ? ORDER BY page_index ASC',
@@ -206,17 +232,33 @@ export async function addPageToDocument(params: {
   filter: FilterPreset;
   adjustments: AdjustmentSettings;
 }): Promise<ScannedPage> {
+  const validFilter = FilterSchema.parse(params.filter);
+  const validAdjustments = AdjustmentsSchema.parse(params.adjustments);
+  const now = Date.now();
+  const id = `page_${now}_${Math.random().toString(36).slice(2, 7)}`;
+
+  if (Platform.OS === 'web') {
+    const existing = webListPages(params.documentId);
+    return webAddPage({
+      id,
+      documentId: params.documentId,
+      pageIndex: existing.length,
+      originalUri: params.originalUri,
+      processedUri: params.processedUri,
+      cropQuad: params.cropQuad,
+      rotation: 0,
+      filter: validFilter,
+      adjustments: validAdjustments,
+      createdAt: now,
+    });
+  }
+
   const db = await getDb();
   const countRow = await db.getFirstAsync<{ max_idx: number | null }>(
     'SELECT MAX(page_index) as max_idx FROM pages WHERE document_id = ?',
     [params.documentId]
   );
   const nextIndex = (countRow?.max_idx ?? -1) + 1;
-  const now = Date.now();
-  const id = `page_${now}_${Math.random().toString(36).slice(2, 7)}`;
-
-  const validFilter = FilterSchema.parse(params.filter);
-  const validAdjustments = AdjustmentsSchema.parse(params.adjustments);
 
   await db.runAsync(
     `INSERT INTO pages (
@@ -262,9 +304,21 @@ export async function updatePage(params: {
   filter: FilterPreset;
   adjustments: AdjustmentSettings;
 }): Promise<void> {
-  const db = await getDb();
   const validFilter = FilterSchema.parse(params.filter);
   const validAdjustments = AdjustmentsSchema.parse(params.adjustments);
+
+  if (Platform.OS === 'web') {
+    webUpdatePage(params.pageId, params.documentId, {
+      originalUri: params.originalUri,
+      processedUri: params.processedUri,
+      cropQuad: params.cropQuad,
+      filter: validFilter,
+      adjustments: validAdjustments,
+    });
+    return;
+  }
+
+  const db = await getDb();
 
   await db.runAsync(
     `UPDATE pages
@@ -289,6 +343,10 @@ export async function movePageOrder(
   pageId: string,
   direction: 'up' | 'down'
 ): Promise<void> {
+  if (Platform.OS === 'web') {
+    webMovePage(documentId, pageId, direction);
+    return;
+  }
   const db = await getDb();
   const pages = await listPagesByDocument(documentId);
   const idx = pages.findIndex((p) => p.id === pageId);
@@ -312,6 +370,10 @@ export async function movePageOrder(
 }
 
 export async function deletePage(documentId: string, pageId: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    webDeletePage(documentId, pageId);
+    return;
+  }
   const db = await getDb();
   const target = await db.getFirstAsync<{ original_uri: string; processed_uri: string }>(
     'SELECT original_uri, processed_uri FROM pages WHERE id = ? AND document_id = ?',
@@ -337,6 +399,10 @@ export async function deletePage(documentId: string, pageId: string): Promise<vo
 }
 
 export async function deleteDocument(documentId: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    webDeleteDocument(documentId);
+    return;
+  }
   const db = await getDb();
   const pages = await listPagesByDocument(documentId);
   await db.runAsync('DELETE FROM documents WHERE id = ?', [documentId]);
@@ -350,6 +416,10 @@ export async function deleteDocument(documentId: string): Promise<void> {
 }
 
 export async function wipeAllDatabaseData(): Promise<void> {
+  if (Platform.OS === 'web') {
+    webWipeAll();
+    return;
+  }
   const db = await getDb();
   await db.execAsync('DELETE FROM pages; DELETE FROM documents;');
 }

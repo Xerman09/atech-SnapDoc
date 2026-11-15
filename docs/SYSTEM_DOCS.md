@@ -1,6 +1,6 @@
 # SnapDoc — System Documentation
 
-> **App Type:** 100% Local-Only, Offline React Native Document Scanner (Expo SDK + TypeScript + Hermes)  
+> **App Type:** 100% Local-Only, Offline React Native Document Scanner (Expo SDK + TypeScript + Hermes, with Web preview fallbacks)  
 > **Last Updated:** Nov 15, 2026
 
 ---

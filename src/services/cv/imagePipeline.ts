@@ -1,6 +1,7 @@
 import { File } from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as jpeg from 'jpeg-js';
+import { Platform } from 'react-native';
 import { AdjustmentSettings, CropQuad, FilterPreset } from '../../types/scanner';
 import { saveScanImageToAppStorage } from '../storage/localFiles';
 import { applyScanFilterToRgba } from '../filters/scanFilters';
@@ -147,9 +148,18 @@ export async function processScanPage(
     90
   );
 
+  const base64Jpg = uint8ArrayToBase64(encoded.data);
+  if (Platform.OS === 'web') {
+    return {
+      uri: `data:image/jpeg;base64,${base64Jpg}`,
+      width: targetDims.width,
+      height: targetDims.height,
+    };
+  }
+
   const outName = `processed_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.jpg`;
   const outFile = new File(saveScanImageToAppStorage(sourceUri, outName, 'jpg'));
-  outFile.write(uint8ArrayToBase64(encoded.data), { encoding: 'base64' });
+  outFile.write(base64Jpg, { encoding: 'base64' });
 
   return {
     uri: outFile.uri,

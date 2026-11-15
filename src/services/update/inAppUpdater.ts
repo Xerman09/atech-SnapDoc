@@ -91,14 +91,16 @@ export async function downloadAndInstallApkUpdate(
     idempotent: true,
   });
 
-  // Verify SHA-256 integrity before launching installer
+  // Verify SHA-256 integrity on raw binary bytes before launching installer
   const bytes = await downloaded.bytes();
-  const digest = await Crypto.digestStringAsync(
+  const hashBuffer = await Crypto.digest(
     Crypto.CryptoDigestAlgorithm.SHA256,
-    Array.from(bytes, (b) => String.fromCharCode(b)).join('')
+    bytes
   );
+  const digest = Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 
-  // Note: If sha256 verification fails on binary encoding, verify hex length & match
   if (digest.toLowerCase() !== manifest.sha256.toLowerCase()) {
     downloaded.delete();
     throw new Error('Update package failed SHA-256 integrity verification.');
