@@ -4,7 +4,16 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'docs/**'
+      - '*.md'
+      - '.agents/**'
+      - 'update-manifest.json'
   workflow_dispatch:
+
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
@@ -30,11 +39,14 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Setup Gradle cache
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: false
 
-      - name: Run TypeScript check and unit tests
+      - name: Install dependencies & verify
         run: |
+          npm ci --prefer-offline --no-audit
           npm run typecheck
           npm test
 
@@ -47,11 +59,11 @@ jobs:
       - name: Expo Prebuild (Android)
         run: npx expo prebuild --platform android --non-interactive
 
-      - name: Build compressed Release APK
+      - name: Build compressed Release APK (arm64-v8a)
         working-directory: android
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a --no-daemon
+          ./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon --build-cache
 
       - name: Prepare versioned APK and SHA-256
         id: apk
@@ -70,7 +82,7 @@ jobs:
           name: SnapDoc-release-apk
           path: ${{ steps.apk.outputs.apk_name }}
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 7
 
       - name: Publish GitHub Release
         env:

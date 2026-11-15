@@ -3,6 +3,10 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Improved (Minimized & Faster GitHub Actions CI)
+- Added `concurrency` (`cancel-in-progress: true`) and `paths-ignore` (`docs/**`, `*.md`, `.agents/**`, `update-manifest.json`) in `.github/workflows/build-apk.yml` to cancel superseded runs and skip docs-only pushes.
+- Added `gradle/actions/setup-gradle@v4` caching, `--build-cache`, `--prefer-offline --no-audit`, and targeted `arm64-v8a` ABI to cut APK build time and output size.
+
 ### Added (Local PDF Download)
 - Added `savePdfToLocalDevice` in `src/services/export/exportService.ts` using `Directory.pickDirectoryAsync()` on Android/iOS (and direct browser download on Web) so users can save generated PDFs directly to any local device folder (e.g., Downloads) without needing the Share Sheet.
 - Updated `src/screens/ExportScreen.tsx` PDF actions to provide both **Save PDF to Device** and **Share / Open PDF**.
