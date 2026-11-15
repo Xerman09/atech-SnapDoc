@@ -16,6 +16,7 @@ import { LegalDocId } from './src/constants/legal';
 import { CaptureScreen } from './src/screens/CaptureScreen';
 import { CropAndEnhanceScreen } from './src/screens/CropAndEnhanceScreen';
 import { DocumentDetailScreen } from './src/screens/DocumentDetailScreen';
+import { ExportScreen } from './src/screens/ExportScreen';
 import { LegalDocumentScreen } from './src/screens/LegalDocumentScreen';
 import { OnboardingConsentScreen } from './src/screens/OnboardingConsentScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
@@ -51,6 +52,7 @@ type ActiveRoute =
   | 'capture'
   | 'edit'
   | 'document'
+  | 'export'
   | 'settings'
   | 'legal';
 
@@ -236,6 +238,19 @@ function MainApp() {
     );
   }
 
+  if (route === 'export' && activeDoc) {
+    return (
+      <>
+        <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
+        <ExportScreen
+          document={activeDoc}
+          pages={activePages}
+          onBack={() => setRoute('document')}
+        />
+      </>
+    );
+  }
+
   if (route === 'document' && activeDoc) {
     return (
       <>
@@ -276,6 +291,7 @@ function MainApp() {
             setDocuments(docs);
             setRoute('home');
           }}
+          onExport={() => setRoute('export')}
         />
       </>
     );

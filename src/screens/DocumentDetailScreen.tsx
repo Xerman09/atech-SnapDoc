@@ -25,6 +25,7 @@ interface DocumentDetailScreenProps {
   onMovePage: (pageId: string, direction: 'up' | 'down') => void;
   onDeletePage: (pageId: string) => void;
   onDeleteDocument: () => void;
+  onExport: () => void;
 }
 
 export function DocumentDetailScreen({
@@ -38,6 +39,7 @@ export function DocumentDetailScreen({
   onMovePage,
   onDeletePage,
   onDeleteDocument,
+  onExport,
 }: DocumentDetailScreenProps) {
   const { colors } = useTheme();
   const [editingTitle, setEditingTitle] = useState(false);
@@ -142,7 +144,25 @@ export function DocumentDetailScreen({
           style={[styles.addBtnSecondary, { borderColor: colors.border, backgroundColor: colors.surface }]}
         >
           <Text style={[styles.addBtnSecondaryText, { color: colors.textPrimary }]}>
-            + Import Page
+            + Import
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={onExport}
+          disabled={pages.length === 0}
+          accessibilityRole="button"
+          accessibilityLabel="Export document as PDF or Image"
+          style={[
+            styles.addBtnSecondary,
+            {
+              borderColor: pages.length > 0 ? colors.primary : colors.border,
+              backgroundColor: colors.surface,
+              opacity: pages.length > 0 ? 1 : 0.5,
+            },
+          ]}
+        >
+          <Text style={[styles.addBtnSecondaryText, { color: colors.primary }]}>
+            Export
           </Text>
         </Pressable>
       </View>

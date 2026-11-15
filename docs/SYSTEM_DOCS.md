@@ -32,7 +32,7 @@ SnapDoc runs completely offline on the user's device. Document capture, edge det
 | 4-Point Perspective Crop & Edge Detection | Completed | Phase 4 | Sobel edge detector, inverse homography warp, draggable SVG corner handles, 90° rotation |
 | Scan Enhancement Filters | Completed | Phase 4 | Original, Magic Color, Grayscale, B&W Adaptive Scan + Brightness/Contrast/Sharpness |
 | Multi-Page Workspace & Encrypted Local DB | Completed | Phase 5 | Parameterized `expo-sqlite` + `expo-secure-store`, multi-page reorder/rename/delete |
-| Image (PNG/JPEG) & PDF Export | Planned | Phase 6 | Single/multi-page PDF (A4/Letter/Fit) |
+| Image (PNG/JPEG) & PDF Export | Completed | Phase 6 | Offline `pdf-lib` multi-page PDF (A4/Letter/Fit, margins, quality) + Gallery/File image export |
 | In-App Auto-Update & Compressed APK | Planned | Phase 7 | In-app update modal + R8/ProGuard/ABI splits |
 
 ---
@@ -52,6 +52,9 @@ SnapDoc runs completely offline on the user's device. Document capture, edge det
 | `jpeg-js` | Pure-JS offline JPEG decode/encode for CV | Yes | None |
 | `expo-sqlite` | Parameterized local SQLite database (`snapdoc.db`) | Yes | None |
 | `expo-secure-store` | Encrypted Keystore preferences & consent storage | Yes | None |
+| `pdf-lib` | Offline single/multi-page PDF generation | Yes | None |
+| `expo-sharing` | Native offline share/save-to-files sheet | Yes | None |
+| `expo-media-library` | Save scanned images to device gallery | Yes | None |
 
 ---
 

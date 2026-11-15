@@ -4,6 +4,12 @@ All notable changes to **SnapDoc (`scanner_app`)** will be documented in this fi
 
 ## [Unreleased] — Nov 15, 2026
 ### Added
+- **Phase 6: Export Engine (Image & PDF)**:
+  - Installed `pdf-lib`, `expo-sharing`, and `expo-media-library`.
+  - Built offline export engine (`src/services/export/exportService.ts`) supporting single/multi-page PDFs (A4, US Letter, Fit-to-Image, margins, quality presets) and PNG/JPEG image export to device gallery or file share sheet.
+  - Built `src/screens/ExportScreen.tsx` and wired Export into `DocumentDetailScreen.tsx` and `App.tsx`.
+
+### Phase 5 (Completed)
 - **Phase 5: Multi-Page Workspace & Local Encrypted Storage**:
   - Installed `expo-sqlite` and `expo-secure-store` (SDK 58 compatible).
   - Built parameterized SQLite database layer (`src/services/storage/database.ts`) with `zod` schema validation and input sanitization for documents and multi-page ordering.
