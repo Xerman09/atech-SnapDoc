@@ -4,6 +4,14 @@ All notable changes to **SnapDoc (`scanner_app`)** will be documented in this fi
 
 ## [Unreleased] — Nov 15, 2026
 ### Added
+- **Phase 3: Document Capture & Safe Import Module**:
+  - Installed `expo-camera`, `expo-image-picker`, `expo-file-system`, and `zod` (SDK 58 compatible).
+  - Added strict image import validation (`src/utils/fileValidation.ts`): allowlists `jpg`/`jpeg`/`png`/`webp`, enforces 20 MB and 10,000 px limits, and sanitizes filenames.
+  - Added app-private local file storage (`src/services/storage/localFiles.ts`) with full data-wipe support.
+  - Added live camera capture screen (`src/screens/CaptureScreen.tsx`) with document framing guide, flash/torch toggle, camera flip, and gallery import.
+  - Added multi-image gallery importer (`src/services/capture/importImages.ts`) and wired capture/import into `App.tsx` with human-readable dates.
+
+### Phase 2 (Completed)
 - **Phase 2: Brand Identity, Logo & Legal/Compliance Foundation**:
   - Generated custom **SnapDoc** app icon, adaptive Android icons, monochrome icon, splash icon, and favicon in `assets/`.
   - Added `src/components/BrandHeader.tsx` with accessible logo + wordmark.

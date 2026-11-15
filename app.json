@@ -20,6 +20,20 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "SnapDoc uses your camera offline to capture document photos."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "SnapDoc accesses selected photos offline so you can convert them into scanned PDFs or images."
+        }
+      ]
+    ]
   }
 }

@@ -28,7 +28,7 @@ SnapDoc runs completely offline on the user's device. Document capture, edge det
 | System Docs & Agent Rules | Active | Phase 1 | `.agents/rules/` + `AGENTS.md` + `docs/` |
 | Brand Identity & Custom Logo | Completed | Phase 2 | Custom SnapDoc icon, adaptive Android icon, splash, `BrandHeader` |
 | Legal, Privacy & Compliance Screens | Completed | Phase 2 | Offline Privacy, Terms, Refund, Cookie, Business Info, Age Gate, Data Deletion |
-| Live Camera & Safe Image Import | Planned | Phase 3 | Offline camera + validated gallery import |
+| Live Camera & Safe Image Import | Completed | Phase 3 | Offline `expo-camera`, multi-image gallery import, `zod` + file allowlist validation |
 | 4-Point Perspective Crop & Edge Detection | Planned | Phase 4 | Interactive corner editor & perspective warp |
 | Scan Enhancement Filters | Planned | Phase 4 | Original, Magic Color, Grayscale, B&W Scan |
 | Multi-Page Workspace & Encrypted Local DB | Planned | Phase 5 | Parameterized SQLite + SecureStore |
@@ -43,7 +43,10 @@ SnapDoc runs completely offline on the user's device. Document capture, edge det
 | Package | Purpose | Offline Safe | Telemetry / Tracking |
 | :--- | :--- | :--- | :--- |
 | `expo` / `react-native` | Core mobile runtime (Hermes) | Yes | None |
-| `zod` *(planned)* | Input & schema validation | Yes | None |
+| `zod` | Input, schema & image import validation | Yes | None |
+| `expo-camera` | Offline camera document capture | Yes | None |
+| `expo-image-picker` | Local gallery multi-image import | Yes | None |
+| `expo-file-system` | App-private `scans/` file storage | Yes | None |
 | `expo-sqlite` *(planned)* | Parameterized local database | Yes | None |
 | `expo-secure-store` *(planned)* | Encrypted key/PIN storage | Yes | None |
 
