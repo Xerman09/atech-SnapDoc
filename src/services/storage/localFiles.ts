@@ -30,7 +30,7 @@ export function saveScanImageToAppStorage(
   const uniqueName = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}_${baseName}`;
   const targetFile = new File(scansDir, uniqueName);
   const sourceFile = new File(sourceUri);
-  sourceFile.copy(targetFile);
+  sourceFile.copySync(targetFile, { overwrite: true });
   return targetFile.uri;
 }
 

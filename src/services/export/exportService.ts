@@ -141,7 +141,8 @@ export async function generateDocumentPdf(params: {
 
   const exportsDir = getExportsDirectory();
   const outFile = new File(exportsDir, fileName);
-  outFile.write(uint8ArrayToBase64(pdfBytes), { encoding: 'base64' });
+  outFile.create({ intermediates: true, overwrite: true });
+  await outFile.write(pdfBytes);
 
   return {
     uri: outFile.uri,
@@ -179,7 +180,7 @@ export async function prepareExportImage(params: {
 
   const exportsDir = getExportsDirectory();
   const targetFile = new File(exportsDir, fileName);
-  new File(result.uri).copy(targetFile);
+  await new File(result.uri).copy(targetFile, { overwrite: true });
 
   return { uri: targetFile.uri };
 }

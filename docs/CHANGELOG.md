@@ -3,6 +3,11 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Fixed (Android Document Processing & File I/O)
+- Added `buffer` polyfill (`globalThis.Buffer`) in `index.ts` and `src/services/cv/imagePipeline.ts` so `jpeg-js` (`Buffer.from(...)`) works reliably in React Native Hermes on Android.
+- Fixed async `expo-file-system` `File.copy` / `File.write` race conditions: switched `saveScanImageToAppStorage` in `src/services/storage/localFiles.ts` to `copySync(..., { overwrite: true })`, updated `processScanPage` in `src/services/cv/imagePipeline.ts` to `create` + `await outFile.write(new Uint8Array(encoded.data))`, and awaited `write` / `copy` in `src/services/export/exportService.ts`.
+- Sanitized base64 whitespace/data-URI prefixes in `base64ToUint8Array` (`imagePipeline.ts`) and surfaced specific error details in `CropAndEnhanceScreen.tsx`'s `Processing Error` alert.
+
 ### Added (Automated In-App Update Releases)
 - Bumped app version to `1.0.1` in `app.json`, `package.json`, and `src/constants/legal.ts`.
 - Updated `.github/workflows/build-apk.yml` to automatically publish versioned APKs (`snapdoc-<version>.apk`) to **GitHub Releases**, compute real SHA-256 checksums, and update `update-manifest.json` on `main` (`[skip ci]`) so installed apps receive automatic in-app update popups.

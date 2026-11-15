@@ -172,8 +172,9 @@ export function CropAndEnhanceScreen({
       );
       setProcessedUri(res.uri);
       setStep('enhance');
-    } catch {
-      Alert.alert('Processing Error', 'Could not process the document image.');
+    } catch (err) {
+      const detail = err instanceof Error && err.message ? `\n\n${err.message}` : '';
+      Alert.alert('Processing Error', `Could not process the document image.${detail}`);
     } finally {
       setBusy(false);
     }

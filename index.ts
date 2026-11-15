@@ -1,4 +1,10 @@
+import { Buffer } from 'buffer';
 import { registerRootComponent } from 'expo';
+
+const g = globalThis as unknown as { Buffer?: typeof Buffer };
+if (typeof g.Buffer === 'undefined') {
+  g.Buffer = Buffer;
+}
 
 import App from './App';
 

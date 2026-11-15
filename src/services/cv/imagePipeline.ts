@@ -1,9 +1,11 @@
+import { Buffer } from 'buffer';
 import { File } from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as jpeg from 'jpeg-js';
 import { Platform } from 'react-native';
 import { AdjustmentSettings, CropQuad, FilterPreset } from '../../types/scanner';
-import { saveScanImageToAppStorage } from '../storage/localFiles';
+import { sanitizeFilename } from '../../utils/fileValidation';
+import { getScansDirectory, saveScanImageToAppStorage } from '../storage/localFiles';
 import { applyScanFilterToRgba } from '../filters/scanFilters';
 import { detectDocumentQuad } from './edgeDetector';
 import {
@@ -12,8 +14,14 @@ import {
   warpPerspectiveRgba,
 } from './geometry';
 
+const g = globalThis as unknown as { Buffer?: typeof Buffer };
+if (typeof g.Buffer === 'undefined') {
+  g.Buffer = Buffer;
+}
+
 function base64ToUint8Array(base64: string): Uint8Array {
-  const binary = globalThis.atob(base64);
+  const clean = base64.replace(/^data:[^;]+;base64,/, '').replace(/\s+/g, '');
+  const binary = globalThis.atob(clean);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);
@@ -148,8 +156,8 @@ export async function processScanPage(
     94
   );
 
-  const base64Jpg = uint8ArrayToBase64(encoded.data);
   if (Platform.OS === 'web') {
+    const base64Jpg = uint8ArrayToBase64(encoded.data);
     return {
       uri: `data:image/jpeg;base64,${base64Jpg}`,
       width: targetDims.width,
@@ -157,9 +165,13 @@ export async function processScanPage(
     };
   }
 
-  const outName = `processed_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.jpg`;
-  const outFile = new File(saveScanImageToAppStorage(sourceUri, outName, 'jpg'));
-  outFile.write(base64Jpg, { encoding: 'base64' });
+  const outName = sanitizeFilename(
+    `processed_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.jpg`,
+    'jpg'
+  );
+  const outFile = new File(getScansDirectory(), outName);
+  outFile.create({ intermediates: true, overwrite: true });
+  await outFile.write(new Uint8Array(encoded.data));
 
   return {
     uri: outFile.uri,
