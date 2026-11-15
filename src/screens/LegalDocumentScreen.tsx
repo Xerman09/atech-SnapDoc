@@ -1,12 +1,13 @@
 import React from 'react';
 import {
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { StudioShell } from '../components/StudioShell';
 import { LEGAL_DOCUMENTS, LegalDocId } from '../constants/legal';
 import { useTheme } from '../theme/ThemeContext';
 import { formatShortDate } from '../utils/dateFormat';
@@ -22,15 +23,16 @@ export function LegalDocumentScreen({ docId, onBack }: LegalDocumentScreenProps)
   const updatedText = formatShortDate(doc.lastUpdatedTimestamp);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { borderBottomColor: colors.border, backgroundColor: colors.surface }]}>
+    <StudioShell>
+      <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
         <Pressable
           onPress={onBack}
           accessibilityRole="button"
           accessibilityLabel={`Back from ${doc.title}`}
-          style={[styles.backBtn, { borderColor: colors.border }]}
+          style={[styles.backBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
         >
-          <Text style={[styles.backText, { color: colors.primary }]}>Back</Text>
+          <Ionicons name="chevron-back" size={16} color={colors.textPrimary} />
+          <Text style={[styles.backText, { color: colors.textPrimary }]}>Back</Text>
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]} numberOfLines={1}>
           {doc.title}
@@ -38,12 +40,12 @@ export function LegalDocumentScreen({ docId, onBack }: LegalDocumentScreenProps)
         <View style={styles.spacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text
-          style={[styles.meta, { color: colors.textSecondary }]}
+          style={[styles.meta, { color: colors.textMuted }]}
           accessibilityLabel={`Last updated ${updatedText}`}
         >
-          Last updated: {updatedText}
+          LAST UPDATED • {updatedText.toUpperCase()}
         </Text>
 
         {doc.sections.map((section) => (
@@ -60,14 +62,11 @@ export function LegalDocumentScreen({ docId, onBack }: LegalDocumentScreenProps)
           </View>
         ))}
       </ScrollView>
-    </SafeAreaView>
+    </StudioShell>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -77,42 +76,51 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   backBtn: {
-    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 9,
     borderWidth: 1,
   },
   backText: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '600',
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
     flex: 1,
     textAlign: 'center',
     marginHorizontal: 8,
+    letterSpacing: -0.2,
   },
   spacer: {
-    width: 56,
+    width: 64,
   },
   content: {
-    padding: 16,
+    padding: 20,
     gap: 12,
+    paddingBottom: 32,
   },
   meta: {
-    fontSize: 13,
-    marginBottom: 4,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.7,
+    marginBottom: 2,
+    marginLeft: 2,
   },
   sectionCard: {
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     padding: 16,
     gap: 6,
   },
   heading: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
+    letterSpacing: -0.2,
   },
   body: {
     fontSize: 14,

@@ -4,40 +4,53 @@ export interface AppPalette {
   surfaceElevated: string;
   textPrimary: string;
   textSecondary: string;
+  textMuted: string;
   primary: string;
   primaryText: string;
+  accent: string;
+  accentSoft: string;
   border: string;
+  borderSubtle: string;
   success: string;
   warning: string;
   danger: string;
 }
 
 /**
- * Light & Dark palettes designed for WCAG AA (>= 4.5:1) text contrast.
+ * Architectural Paper (Light) & Obsidian Studio (Dark) palettes.
+ * All text/background pairs maintain >= 4.5:1 WCAG AA contrast.
  */
 export const lightPalette: AppPalette = {
-  background: '#F8FAFC',
+  background: '#F5F4F0',
   surface: '#FFFFFF',
-  surfaceElevated: '#F1F5F9',
-  textPrimary: '#0F172A',
-  textSecondary: '#475569',
-  primary: '#1D4ED8',
+  surfaceElevated: '#EFEDE7',
+  textPrimary: '#111318',
+  textSecondary: '#4A505C',
+  textMuted: '#68707E',
+  primary: '#111318',
   primaryText: '#FFFFFF',
-  border: '#CBD5E1',
-  success: '#15803D',
-  warning: '#B45309',
-  danger: '#B91C1C',
+  accent: '#1546B8',
+  accentSoft: '#EBF1FC',
+  border: '#DFDDD5',
+  borderSubtle: '#ECEAE3',
+  success: '#157A3D',
+  warning: '#A85208',
+  danger: '#B42318',
 };
 
 export const darkPalette: AppPalette = {
-  background: '#0B1120',
-  surface: '#111827',
-  surfaceElevated: '#1E293B',
-  textPrimary: '#F8FAFC',
-  textSecondary: '#94A3B8',
-  primary: '#60A5FA',
-  primaryText: '#0B1120',
-  border: '#334155',
+  background: '#090A0D',
+  surface: '#12141A',
+  surfaceElevated: '#1B1E27',
+  textPrimary: '#F4F5F7',
+  textSecondary: '#A3AAB8',
+  textMuted: '#7C8494',
+  primary: '#F4F5F7',
+  primaryText: '#090A0D',
+  accent: '#6EA8FE',
+  accentSoft: '#162238',
+  border: '#272B36',
+  borderSubtle: '#1D202A',
   success: '#4ADE80',
   warning: '#FBBF24',
   danger: '#F87171',

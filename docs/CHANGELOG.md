@@ -3,6 +3,11 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Changed (UI/UX Upgrade)
+- Upgraded the visual design system (`src/theme/colors.ts`) to an **Architectural Paper (Light)** and **Obsidian Studio (Dark)** palette with WCAG AA contrast.
+- Installed `@expo/vector-icons` and added `src/components/StudioShell.tsx` for responsive centered studio framing on desktop/web and full-width mobile layout.
+- Redesigned `BrandHeader.tsx`, `OnboardingConsentScreen.tsx`, `App.tsx`, `SettingsScreen.tsx`, `LegalDocumentScreen.tsx`, `DocumentDetailScreen.tsx`, and `ExportScreen.tsx` with grouped hairline lists, segmented controls, crisp vector icons, and refined typographic hierarchy.
+
 ### Fixed (QA Audit)
 - Added `metro.config.js` with `unstable_enablePackageExports = false` to fix Metro Web `tslib.default` (`__extends`) runtime crash.
 - Fixed binary SHA-256 checksum verification in `src/services/update/inAppUpdater.ts` to use `Crypto.digest(SHA256, Uint8Array)` instead of UTF-8 string hashing.

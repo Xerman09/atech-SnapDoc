@@ -3,12 +3,13 @@ import {
   ActivityIndicator,
   Alert,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { StudioShell } from '../components/StudioShell';
 import {
   ExportQualityPreset,
   generateDocumentPdf,
@@ -53,7 +54,7 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
       await shareLocalFile(
         uri,
         'application/pdf',
-        `Save ${document.title} (${sizeKb} KB)`
+        `${document.title}_${sizeKb}KB.pdf`
       );
     } catch (err) {
       Alert.alert(
@@ -89,7 +90,8 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
         );
       } else {
         const mime = imageFormat === 'png' ? 'image/png' : 'image/jpeg';
-        await shareLocalFile(preparedUris[0], mime, `Save ${document.title} Image`);
+        const ext = imageFormat === 'png' ? 'png' : 'jpg';
+        await shareLocalFile(preparedUris[0], mime, `${document.title}_page_1.${ext}`);
       }
     } catch (err) {
       Alert.alert(
@@ -102,23 +104,24 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+    <StudioShell>
+      <View style={[styles.header, { borderBottomColor: colors.borderSubtle }]}>
         <Pressable
           onPress={onBack}
           accessibilityRole="button"
           accessibilityLabel="Back to document"
-          style={[styles.backBtn, { borderColor: colors.border }]}
+          style={[styles.backBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
         >
-          <Text style={[styles.backText, { color: colors.primary }]}>Back</Text>
+          <Ionicons name="chevron-back" size={16} color={colors.textPrimary} />
+          <Text style={[styles.backText, { color: colors.textPrimary }]}>Back</Text>
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-          Export Document
+          Export
         </Text>
         <View style={styles.spacer} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.docTitle, { color: colors.textPrimary }]} numberOfLines={1}>
             {document.title}
@@ -129,51 +132,41 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
           </Text>
         </View>
 
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            Export Format
-          </Text>
-          <View style={styles.row}>
-            {(
-              [
-                ['pdf', 'PDF Document'],
-                ['image', 'Image (JPG / PNG)'],
-              ] as ['pdf' | 'image', string][]
-            ).map(([id, label]) => {
-              const selected = exportMode === id;
-              return (
-                <Pressable
-                  key={id}
-                  onPress={() => setExportMode(id)}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected }}
-                  accessibilityLabel={`Export as ${label}`}
+        <Text style={[styles.groupLabel, { color: colors.textMuted }]}>FORMAT</Text>
+        <View style={[styles.segmentedWrap, { backgroundColor: colors.surfaceElevated, borderColor: colors.border }]}>
+          {(
+            [
+              ['pdf', 'PDF Document'],
+              ['image', 'Image (JPG / PNG)'],
+            ] as ['pdf' | 'image', string][]
+          ).map(([id, label]) => {
+            const selected = exportMode === id;
+            return (
+              <Pressable
+                key={id}
+                onPress={() => setExportMode(id)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected }}
+                accessibilityLabel={`Export as ${label}`}
+                style={[styles.segment, selected && { backgroundColor: colors.surface }]}
+              >
+                <Text
                   style={[
-                    styles.chip,
-                    {
-                      borderColor: selected ? colors.primary : colors.border,
-                      backgroundColor: selected ? colors.primary : colors.surfaceElevated,
-                    },
+                    styles.segmentText,
+                    { color: selected ? colors.textPrimary : colors.textSecondary },
                   ]}
                 >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      { color: selected ? colors.primaryText : colors.textPrimary },
-                    ]}
-                  >
-                    {label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+                  {label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         {exportMode === 'pdf' ? (
           <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-              PDF Page Size
+              Page Size
             </Text>
             <View style={styles.row}>
               {(
@@ -194,15 +187,15 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
                     style={[
                       styles.chip,
                       {
-                        borderColor: selected ? colors.primary : colors.border,
-                        backgroundColor: selected ? colors.primary : colors.surfaceElevated,
+                        borderColor: selected ? colors.accent : colors.border,
+                        backgroundColor: selected ? colors.accentSoft : colors.background,
                       },
                     ]}
                   >
                     <Text
                       style={[
                         styles.chipText,
-                        { color: selected ? colors.primaryText : colors.textPrimary },
+                        { color: selected ? colors.accent : colors.textPrimary },
                       ]}
                     >
                       {label}
@@ -212,7 +205,7 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
               })}
             </View>
 
-            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 6 }]}>
               Margins
             </Text>
             <View style={styles.row}>
@@ -234,15 +227,15 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
                     style={[
                       styles.chip,
                       {
-                        borderColor: selected ? colors.primary : colors.border,
-                        backgroundColor: selected ? colors.primary : colors.surfaceElevated,
+                        borderColor: selected ? colors.accent : colors.border,
+                        backgroundColor: selected ? colors.accentSoft : colors.background,
                       },
                     ]}
                   >
                     <Text
                       style={[
                         styles.chipText,
-                        { color: selected ? colors.primaryText : colors.textPrimary },
+                        { color: selected ? colors.accent : colors.textPrimary },
                       ]}
                     >
                       {label}
@@ -275,15 +268,15 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
                     style={[
                       styles.chip,
                       {
-                        borderColor: selected ? colors.primary : colors.border,
-                        backgroundColor: selected ? colors.primary : colors.surfaceElevated,
+                        borderColor: selected ? colors.accent : colors.border,
+                        backgroundColor: selected ? colors.accentSoft : colors.background,
                       },
                     ]}
                   >
                     <Text
                       style={[
                         styles.chipText,
-                        { color: selected ? colors.primaryText : colors.textPrimary },
+                        { color: selected ? colors.accent : colors.textPrimary },
                       ]}
                     >
                       {label}
@@ -297,7 +290,7 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
 
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            Quality / File Size
+            Compression & Quality
           </Text>
           <View style={styles.row}>
             {(
@@ -318,15 +311,15 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
                   style={[
                     styles.chip,
                     {
-                      borderColor: selected ? colors.primary : colors.border,
-                      backgroundColor: selected ? colors.primary : colors.surfaceElevated,
+                      borderColor: selected ? colors.accent : colors.border,
+                      backgroundColor: selected ? colors.accentSoft : colors.background,
                     },
                   ]}
                 >
                   <Text
                     style={[
                       styles.chipText,
-                      { color: selected ? colors.primaryText : colors.textPrimary },
+                      { color: selected ? colors.accent : colors.textPrimary },
                     ]}
                   >
                     {label}
@@ -339,7 +332,7 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
 
         {busy ? (
           <View style={styles.busyRow}>
-            <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator size="small" color={colors.accent} />
             <Text style={[styles.busyText, { color: colors.textSecondary }]}>
               Generating offline export...
             </Text>
@@ -352,45 +345,45 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
             accessibilityLabel="Generate and download PDF document"
             style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
           >
+            <Ionicons name="download-outline" size={18} color={colors.primaryText} />
             <Text style={[styles.primaryBtnText, { color: colors.primaryText }]}>
-              Generate & Save PDF
+              Download PDF
             </Text>
           </Pressable>
         ) : (
           <View style={styles.imageActions}>
             <Pressable
+              onPress={() => handleExportImages('share')}
+              disabled={pages.length === 0}
+              accessibilityRole="button"
+              accessibilityLabel="Download or share image file"
+              style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
+            >
+              <Ionicons name="download-outline" size={18} color={colors.primaryText} />
+              <Text style={[styles.primaryBtnText, { color: colors.primaryText }]}>
+                Download Image
+              </Text>
+            </Pressable>
+            <Pressable
               onPress={() => handleExportImages('gallery')}
               disabled={pages.length === 0}
               accessibilityRole="button"
               accessibilityLabel="Save all scanned pages to device gallery"
-              style={[styles.primaryBtn, { backgroundColor: colors.primary }]}
-            >
-              <Text style={[styles.primaryBtnText, { color: colors.primaryText }]}>
-                Save All to Gallery
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => handleExportImages('share')}
-              disabled={pages.length === 0}
-              accessibilityRole="button"
-              accessibilityLabel="Share or save first page image file"
               style={[styles.secondaryBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
             >
+              <Ionicons name="images-outline" size={17} color={colors.textPrimary} />
               <Text style={[styles.secondaryBtnText, { color: colors.textPrimary }]}>
-                Save / Share Image File
+                Save All to Device Gallery
               </Text>
             </Pressable>
           </View>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </StudioShell>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -400,47 +393,77 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   backBtn: {
-    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 9,
     borderWidth: 1,
   },
   backText: {
-    fontSize: 14,
+    fontSize: 13.5,
     fontWeight: '600',
   },
   headerTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '700',
+    letterSpacing: -0.2,
   },
   spacer: {
-    width: 56,
+    width: 64,
   },
   content: {
-    padding: 16,
-    gap: 14,
+    padding: 20,
+    gap: 12,
+    paddingBottom: 32,
   },
   summaryCard: {
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     padding: 16,
     gap: 4,
   },
   docTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '700',
+    letterSpacing: -0.2,
   },
   docMeta: {
     fontSize: 13,
   },
-  card: {
+  groupLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    marginTop: 4,
+    marginLeft: 4,
+  },
+  segmentedWrap: {
+    flexDirection: 'row',
+    padding: 4,
     borderRadius: 12,
+    borderWidth: 1,
+    gap: 4,
+  },
+  segment: {
+    flex: 1,
+    borderRadius: 9,
+    paddingVertical: 9,
+    alignItems: 'center',
+  },
+  segmentText: {
+    fontSize: 13.5,
+    fontWeight: '600',
+  },
+  card: {
+    borderRadius: 14,
     borderWidth: 1,
     padding: 16,
     gap: 10,
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
   },
   row: {
@@ -449,7 +472,7 @@ const styles = StyleSheet.create({
   },
   chip: {
     flex: 1,
-    borderRadius: 8,
+    borderRadius: 9,
     borderWidth: 1,
     paddingVertical: 10,
     alignItems: 'center',
@@ -473,19 +496,26 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   primaryBtn: {
+    flexDirection: 'row',
+    gap: 8,
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 15,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
   },
   primaryBtnText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   secondaryBtn: {
+    flexDirection: 'row',
+    gap: 8,
     borderRadius: 12,
     borderWidth: 1,
     paddingVertical: 13,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   secondaryBtnText: {
     fontSize: 14,

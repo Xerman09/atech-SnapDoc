@@ -59,6 +59,7 @@ SnapDoc runs completely offline on the user's device. Document capture, edge det
 | `expo-intent-launcher` | Direct in-app Android APK update installer | Yes | None |
 | `expo-crypto` | SHA-256 checksum verification for updates | Yes | None |
 | `expo-build-properties` | ProGuard/R8 shrinking & HTTPS-only enforcement | Yes | None |
+| `@expo/vector-icons` | Crisp UI vector icons (`Ionicons`) | Yes | None |
 
 ---
 

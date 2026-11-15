@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import {
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { BrandHeader } from '../components/BrandHeader';
+import { StudioShell } from '../components/StudioShell';
 import { LegalDocId } from '../constants/legal';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -15,6 +16,13 @@ interface OnboardingConsentScreenProps {
   onAccept: () => void;
   onOpenLegal: (docId: LegalDocId) => void;
 }
+
+const POLICY_ITEMS: { id: LegalDocId; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { id: 'privacy', label: 'Privacy Policy', icon: 'shield-checkmark-outline' },
+  { id: 'terms', label: 'Terms of Service', icon: 'document-text-outline' },
+  { id: 'refund', label: 'Refund Policy', icon: 'card-outline' },
+  { id: 'cookies', label: 'Cookie Policy', icon: 'ellipse-outline' },
+];
 
 export function OnboardingConsentScreen({
   onAccept,
@@ -29,98 +37,138 @@ export function OnboardingConsentScreen({
   const canProceed = acceptedPolicies && confirmedAge;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <BrandHeader subtitle="100% Offline & Private Document Scanner" />
+    <StudioShell>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.headerBlock}>
+          <BrandHeader subtitle="100% Offline & Private Document Studio" />
+        </View>
 
-        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>
-            Before You Begin
-          </Text>
-          <Text style={[styles.description, { color: colors.textSecondary }]}>
-            SnapDoc works completely offline on your device. No documents, analytics, or cookies are sent to any server.
-          </Text>
+        <View
+          style={[
+            styles.heroCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <View style={styles.heroIntro}>
+            <Text style={[styles.eyebrow, { color: colors.accent }]}>
+              PRIVACY-FIRST ARCHITECTURE
+            </Text>
+            <Text style={[styles.title, { color: colors.textPrimary }]}>
+              Before you begin
+            </Text>
+            <Text style={[styles.description, { color: colors.textSecondary }]}>
+              Every scan, edge crop, and PDF export happens strictly on your device. Zero cloud uploads, zero analytics, and zero trackers.
+            </Text>
+          </View>
 
-          <View style={styles.policyLinks}>
-            {(
-              [
-                ['privacy', 'Privacy Policy'],
-                ['terms', 'Terms of Service'],
-                ['refund', 'Refund Policy'],
-                ['cookies', 'Cookie Policy'],
-              ] as [LegalDocId, string][]
-            ).map(([id, label]) => (
+          <View
+            style={[
+              styles.groupedList,
+              { borderColor: colors.borderSubtle, backgroundColor: colors.background },
+            ]}
+          >
+            {POLICY_ITEMS.map((item, idx) => (
               <Pressable
-                key={id}
-                onPress={() => onOpenLegal(id)}
+                key={item.id}
+                onPress={() => onOpenLegal(item.id)}
                 accessibilityRole="link"
-                accessibilityLabel={`Read ${label}`}
-                style={[styles.linkChip, { borderColor: colors.border, backgroundColor: colors.surfaceElevated }]}
+                accessibilityLabel={`Read ${item.label}`}
+                style={({ pressed }) => [
+                  styles.policyRow,
+                  idx < POLICY_ITEMS.length - 1 && {
+                    borderBottomWidth: 1,
+                    borderBottomColor: colors.borderSubtle,
+                  },
+                  pressed && { opacity: 0.7 },
+                ]}
               >
-                <Text style={[styles.linkText, { color: colors.primary }]}>{label}</Text>
+                <View style={styles.policyLeft}>
+                  <Ionicons name={item.icon} size={17} color={colors.textSecondary} />
+                  <Text style={[styles.policyLabel, { color: colors.textPrimary }]}>
+                    {item.label}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
               </Pressable>
             ))}
           </View>
 
-          <Pressable
-            onPress={() => {
-              setAcceptedPolicies((prev) => !prev);
-              setDeclinedMessage(false);
-            }}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: acceptedPolicies }}
-            accessibilityLabel="I have read and agree to the Privacy Policy and Terms of Service"
-            style={[styles.checkRow, { borderColor: colors.border }]}
-          >
-            <View
+          <View style={styles.consentGroup}>
+            <Pressable
+              onPress={() => {
+                setAcceptedPolicies((prev) => !prev);
+                setDeclinedMessage(false);
+              }}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: acceptedPolicies }}
+              accessibilityLabel="I have read and agree to the Privacy Policy and Terms of Service"
               style={[
-                styles.checkbox,
+                styles.checkRow,
                 {
-                  borderColor: acceptedPolicies ? colors.primary : colors.border,
-                  backgroundColor: acceptedPolicies ? colors.primary : 'transparent',
+                  borderColor: acceptedPolicies ? colors.accent : colors.border,
+                  backgroundColor: acceptedPolicies ? colors.accentSoft : colors.surface,
                 },
               ]}
             >
-              {acceptedPolicies ? (
-                <Text style={[styles.checkmark, { color: colors.primaryText }]}>✓</Text>
-              ) : null}
-            </View>
-            <Text style={[styles.checkLabel, { color: colors.textPrimary }]}>
-              I agree to the Privacy Policy and Terms of Service.
-            </Text>
-          </Pressable>
+              <View
+                style={[
+                  styles.checkbox,
+                  {
+                    borderColor: acceptedPolicies ? colors.accent : colors.border,
+                    backgroundColor: acceptedPolicies ? colors.accent : 'transparent',
+                  },
+                ]}
+              >
+                {acceptedPolicies ? (
+                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                ) : null}
+              </View>
+              <Text style={[styles.checkLabel, { color: colors.textPrimary }]}>
+                I agree to the Privacy Policy and Terms of Service.
+              </Text>
+            </Pressable>
 
-          <Pressable
-            onPress={() => {
-              setConfirmedAge((prev) => !prev);
-              setDeclinedMessage(false);
-            }}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: confirmedAge }}
-            accessibilityLabel="I confirm I am at least 13 years old or have parent or guardian consent"
-            style={[styles.checkRow, { borderColor: colors.border }]}
-          >
-            <View
+            <Pressable
+              onPress={() => {
+                setConfirmedAge((prev) => !prev);
+                setDeclinedMessage(false);
+              }}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: confirmedAge }}
+              accessibilityLabel="I confirm I am at least 13 years old or have parent or guardian consent"
               style={[
-                styles.checkbox,
+                styles.checkRow,
                 {
-                  borderColor: confirmedAge ? colors.primary : colors.border,
-                  backgroundColor: confirmedAge ? colors.primary : 'transparent',
+                  borderColor: confirmedAge ? colors.accent : colors.border,
+                  backgroundColor: confirmedAge ? colors.accentSoft : colors.surface,
                 },
               ]}
             >
-              {confirmedAge ? (
-                <Text style={[styles.checkmark, { color: colors.primaryText }]}>✓</Text>
-              ) : null}
-            </View>
-            <Text style={[styles.checkLabel, { color: colors.textPrimary }]}>
-              I am 13 years or older, or have parent/guardian consent to use this app.
-            </Text>
-          </Pressable>
+              <View
+                style={[
+                  styles.checkbox,
+                  {
+                    borderColor: confirmedAge ? colors.accent : colors.border,
+                    backgroundColor: confirmedAge ? colors.accent : 'transparent',
+                  },
+                ]}
+              >
+                {confirmedAge ? (
+                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                ) : null}
+              </View>
+              <Text style={[styles.checkLabel, { color: colors.textPrimary }]}>
+                I am 13 years or older, or have parent/guardian consent.
+              </Text>
+            </Pressable>
+          </View>
 
           {declinedMessage ? (
             <Text style={[styles.notice, { color: colors.warning }]} accessibilityLiveRegion="polite">
-              You chose not to accept. Both checkboxes are required before scanning documents.
+              Both confirmations are required before scanning documents.
             </Text>
           ) : null}
 
@@ -131,18 +179,18 @@ export function OnboardingConsentScreen({
               accessibilityRole="button"
               accessibilityState={{ disabled: !canProceed }}
               accessibilityLabel="Accept and continue to SnapDoc"
-              style={[
+              style={({ pressed }) => [
                 styles.primaryBtn,
                 {
                   backgroundColor: canProceed ? colors.primary : colors.surfaceElevated,
-                  borderColor: colors.border,
+                  opacity: pressed && canProceed ? 0.88 : 1,
                 },
               ]}
             >
               <Text
                 style={[
                   styles.primaryBtnText,
-                  { color: canProceed ? colors.primaryText : colors.textSecondary },
+                  { color: canProceed ? colors.primaryText : colors.textMuted },
                 ]}
               >
                 Accept & Continue
@@ -157,109 +205,128 @@ export function OnboardingConsentScreen({
               }}
               accessibilityRole="button"
               accessibilityLabel="Decline terms and stay on consent screen"
-              style={[styles.secondaryBtn, { borderColor: colors.border }]}
+              style={styles.declineLink}
             >
-              <Text style={[styles.secondaryBtnText, { color: colors.textSecondary }]}>
+              <Text style={[styles.declineText, { color: colors.textMuted }]}>
                 Decline
               </Text>
             </Pressable>
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </StudioShell>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-  },
   container: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 28,
     gap: 20,
     flexGrow: 1,
     justifyContent: 'center',
   },
-  card: {
-    borderRadius: 16,
+  headerBlock: {
+    paddingHorizontal: 4,
+  },
+  heroCard: {
+    borderRadius: 20,
     borderWidth: 1,
-    padding: 20,
-    gap: 14,
+    padding: 22,
+    gap: 18,
+    shadowColor: '#000000',
+    shadowOpacity: 0.05,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2,
+  },
+  heroIntro: {
+    gap: 6,
+  },
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.9,
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
+    letterSpacing: -0.5,
   },
   description: {
     fontSize: 14,
     lineHeight: 20,
   },
-  policyLinks: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  linkChip: {
+  groupedList: {
+    borderRadius: 12,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    overflow: 'hidden',
   },
-  linkText: {
-    fontSize: 13,
-    fontWeight: '600',
+  policyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  policyLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  policyLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  consentGroup: {
+    gap: 10,
   },
   checkRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    padding: 12,
-    borderRadius: 10,
+    padding: 13,
+    borderRadius: 12,
     borderWidth: 1,
   },
   checkbox: {
-    width: 22,
-    height: 22,
+    width: 20,
+    height: 20,
     borderRadius: 6,
-    borderWidth: 2,
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkmark: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
   checkLabel: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13.5,
     lineHeight: 19,
+    fontWeight: '500',
   },
   notice: {
     fontSize: 13,
     fontWeight: '500',
   },
   actions: {
-    gap: 10,
-    marginTop: 4,
+    gap: 8,
+    marginTop: 2,
   },
   primaryBtn: {
-    borderRadius: 10,
-    borderWidth: 1,
-    paddingVertical: 13,
+    borderRadius: 12,
+    paddingVertical: 15,
     alignItems: 'center',
   },
   primaryBtnText: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
+    letterSpacing: -0.1,
   },
-  secondaryBtn: {
-    borderRadius: 10,
-    borderWidth: 1,
-    paddingVertical: 11,
+  declineLink: {
+    paddingVertical: 10,
     alignItems: 'center',
   },
-  secondaryBtnText: {
-    fontSize: 14,
+  declineText: {
+    fontSize: 13,
     fontWeight: '600',
   },
 });
