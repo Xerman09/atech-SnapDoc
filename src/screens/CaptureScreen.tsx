@@ -3,11 +3,11 @@ import {
   ActivityIndicator,
   Alert,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
 import {
   CapturedImageAsset,
@@ -130,7 +130,10 @@ export function CaptureScreen({ onCaptured, onCancel }: CaptureScreenProps) {
   }
 
   return (
-    <SafeAreaView style={styles.cameraRoot}>
+    <SafeAreaView
+      edges={['top', 'bottom', 'left', 'right']}
+      style={styles.cameraRoot}
+    >
       <View style={styles.topControls}>
         <Pressable
           onPress={onCancel}

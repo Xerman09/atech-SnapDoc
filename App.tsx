@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { BrandHeader } from './src/components/BrandHeader';
 import { StudioShell } from './src/components/StudioShell';
 import { UpdateModal } from './src/components/UpdateModal';
@@ -696,9 +697,11 @@ function MainApp() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <MainApp />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <MainApp />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
 

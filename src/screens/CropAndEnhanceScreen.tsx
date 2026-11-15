@@ -6,12 +6,12 @@ import {
   LayoutChangeEvent,
   PanResponder,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Polygon } from 'react-native-svg';
 import {
   autoDetectNormalizedQuad,
@@ -174,7 +174,10 @@ export function CropAndEnhanceScreen({
   ].join(' ');
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      edges={['top', 'bottom', 'left', 'right']}
+      style={[styles.safe, { backgroundColor: colors.background }]}
+    >
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <Pressable
           onPress={onCancel}

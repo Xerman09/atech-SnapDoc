@@ -3,6 +3,10 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Fixed (Android Safe Area Insets)
+- Installed `react-native-safe-area-context`, wrapped `App.tsx` in `<SafeAreaProvider>`, and replaced `react-native`'s `SafeAreaView` with `SafeAreaView` from `react-native-safe-area-context` across `StudioShell.tsx`, `CaptureScreen.tsx`, and `CropAndEnhanceScreen.tsx` to prevent status bar and navigation bar overlap on Android.
+- Added `.agents/rules/safe-area.md` to enforce `react-native-safe-area-context` on all future screens.
+
 ### Added (Planning / Roadmap)
 - Created `docs/V2_PLAN.md` documenting the SnapDoc v2.0 phased product and engineering roadmap (Phases 9–15):
   - **Phase 9:** UI/UX Navigation Shell with a 5-item bottom bar (`Home`, `Files`, raised center **Camera**, `Tools`, `Settings`).

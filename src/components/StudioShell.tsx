@@ -1,5 +1,6 @@
 import React from 'react';
-import { SafeAreaView, StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleSheet, View, ViewStyle } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../theme/ThemeContext';
 
 interface StudioShellProps {
@@ -9,13 +10,16 @@ interface StudioShellProps {
 
 /**
  * Centers content cleanly at mobile-studio width on wide screens
- * while filling 100% width on phones.
+ * while applying Android/iOS Safe Area insets (status bar & navigation bar).
  */
 export function StudioShell({ children, style }: StudioShellProps) {
   const { colors } = useTheme();
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      edges={['top', 'bottom', 'left', 'right']}
+      style={[styles.safe, { backgroundColor: colors.background }]}
+    >
       <View style={[styles.frame, style]}>{children}</View>
     </SafeAreaView>
   );
