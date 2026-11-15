@@ -26,8 +26,8 @@ SnapDoc runs completely offline on the user's device. Document capture, edge det
 | Light Mode & Dark Mode Theme System | Completed | Phase 1 | System-aware + manual toggle, WCAG AA contrast (`src/theme/`) |
 | Human-Readable Date Formatting | Completed | Phase 1 | Centralized `src/utils/dateFormat.ts` |
 | System Docs & Agent Rules | Active | Phase 1 | `.agents/rules/` + `AGENTS.md` + `docs/` |
-| Brand Identity & Custom Logo | Planned | Phase 2 | Original vector/PNG icon & splash |
-| Legal, Privacy & Compliance Screens | Planned | Phase 2 | Offline Privacy, Terms, Refund, Cookie, Data Deletion |
+| Brand Identity & Custom Logo | Completed | Phase 2 | Custom SnapDoc icon, adaptive Android icon, splash, `BrandHeader` |
+| Legal, Privacy & Compliance Screens | Completed | Phase 2 | Offline Privacy, Terms, Refund, Cookie, Business Info, Age Gate, Data Deletion |
 | Live Camera & Safe Image Import | Planned | Phase 3 | Offline camera + validated gallery import |
 | 4-Point Perspective Crop & Edge Detection | Planned | Phase 4 | Interactive corner editor & perspective warp |
 | Scan Enhancement Filters | Planned | Phase 4 | Original, Magic Color, Grayscale, B&W Scan |

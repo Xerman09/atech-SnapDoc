@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Pressable,
   SafeAreaView,
@@ -7,23 +7,98 @@ import {
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { BrandHeader } from './src/components/BrandHeader';
+import { LegalDocId } from './src/constants/legal';
+import { LegalDocumentScreen } from './src/screens/LegalDocumentScreen';
+import { OnboardingConsentScreen } from './src/screens/OnboardingConsentScreen';
+import { SettingsScreen } from './src/screens/SettingsScreen';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { formatDisplayDate } from './src/utils/dateFormat';
 
-function MainShell() {
-  const { colors, resolvedScheme, mode, toggleTheme, setMode } = useTheme();
+type ActiveRoute = 'onboarding' | 'home' | 'settings' | 'legal';
+
+function MainApp() {
+  const { colors, resolvedScheme, toggleTheme } = useTheme();
+  const [hasConsented, setHasConsented] = useState(false);
+  const [route, setRoute] = useState<ActiveRoute>('onboarding');
+  const [legalReturnRoute, setLegalReturnRoute] = useState<'onboarding' | 'settings'>('onboarding');
+  const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocId>('privacy');
+
+  const openLegal = (docId: LegalDocId, returnTo: 'onboarding' | 'settings') => {
+    setActiveLegalDoc(docId);
+    setLegalReturnRoute(returnTo);
+    setRoute('legal');
+  };
+
+  if (route === 'legal') {
+    return (
+      <>
+        <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
+        <LegalDocumentScreen
+          docId={activeLegalDoc}
+          onBack={() => setRoute(legalReturnRoute)}
+        />
+      </>
+    );
+  }
+
+  if (!hasConsented || route === 'onboarding') {
+    return (
+      <>
+        <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
+        <OnboardingConsentScreen
+          onAccept={() => {
+            setHasConsented(true);
+            setRoute('home');
+          }}
+          onOpenLegal={(docId) => openLegal(docId, 'onboarding')}
+        />
+      </>
+    );
+  }
+
+  if (route === 'settings') {
+    return (
+      <>
+        <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
+        <SettingsScreen
+          onBack={() => setRoute('home')}
+          onOpenLegal={(docId) => openLegal(docId, 'settings')}
+          onDeleteAllData={() => {
+            setHasConsented(false);
+            setRoute('onboarding');
+          }}
+        />
+      </>
+    );
+  }
+
   const formattedNow = formatDisplayDate(new Date());
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
       <View style={styles.container}>
+        <View style={styles.topBar}>
+          <View style={styles.brandWrap}>
+            <BrandHeader />
+          </View>
+          <Pressable
+            onPress={() => setRoute('settings')}
+            accessibilityRole="button"
+            accessibilityLabel="Open Settings and Privacy"
+            style={[styles.iconBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
+          >
+            <Text style={[styles.iconBtnText, { color: colors.textPrimary }]}>Settings</Text>
+          </Pressable>
+        </View>
+
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.title, { color: colors.textPrimary }]}>
-            SnapDoc
+          <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+            Ready to Scan Offline
           </Text>
           <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
-            100% Offline Document Scanner
+            All documents stay on your device. Camera capture and image import will be added in Phase 3.
           </Text>
           <Text
             style={[styles.dateText, { color: colors.textSecondary }]}
@@ -32,29 +107,16 @@ function MainShell() {
             {formattedNow}
           </Text>
 
-          <View style={styles.actions}>
-            <Pressable
-              onPress={toggleTheme}
-              accessibilityRole="button"
-              accessibilityLabel={`Switch to ${resolvedScheme === 'dark' ? 'Light' : 'Dark'} Mode`}
-              style={[styles.button, { backgroundColor: colors.primary }]}
-            >
-              <Text style={[styles.buttonText, { color: colors.primaryText }]}>
-                Toggle {resolvedScheme === 'dark' ? 'Light' : 'Dark'} Mode
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => setMode('system')}
-              accessibilityRole="button"
-              accessibilityLabel="Use system appearance setting"
-              style={[styles.secondaryButton, { borderColor: colors.border }]}
-            >
-              <Text style={[styles.secondaryButtonText, { color: colors.textPrimary }]}>
-                System ({mode})
-              </Text>
-            </Pressable>
-          </View>
+          <Pressable
+            onPress={toggleTheme}
+            accessibilityRole="button"
+            accessibilityLabel={`Switch to ${resolvedScheme === 'dark' ? 'Light' : 'Dark'} Mode`}
+            style={[styles.button, { backgroundColor: colors.primary }]}
+          >
+            <Text style={[styles.buttonText, { color: colors.primaryText }]}>
+              Switch to {resolvedScheme === 'dark' ? 'Light' : 'Dark'} Mode
+            </Text>
+          </Pressable>
         </View>
       </View>
     </SafeAreaView>
@@ -64,7 +126,7 @@ function MainShell() {
 export default function App() {
   return (
     <ThemeProvider>
-      <MainShell />
+      <MainApp />
     </ThemeProvider>
   );
 }
@@ -75,31 +137,48 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    justifyContent: 'center',
     padding: 20,
+    gap: 20,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  brandWrap: {
+    flex: 1,
+  },
+  iconBtn: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  iconBtnText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   card: {
     borderRadius: 16,
     borderWidth: 1,
-    padding: 24,
+    padding: 20,
     gap: 10,
   },
-  title: {
-    fontSize: 28,
+  sectionTitle: {
+    fontSize: 20,
     fontWeight: '700',
   },
   subtitle: {
-    fontSize: 15,
+    fontSize: 14,
+    lineHeight: 20,
   },
   dateText: {
     fontSize: 13,
-    marginTop: 4,
-  },
-  actions: {
-    marginTop: 16,
-    gap: 10,
+    marginTop: 2,
   },
   button: {
+    marginTop: 8,
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 16,
@@ -108,16 +187,5 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 15,
     fontWeight: '600',
-  },
-  secondaryButton: {
-    borderRadius: 10,
-    borderWidth: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-  },
-  secondaryButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
   },
 });
