@@ -88,11 +88,11 @@ export async function processScanPage(
   filter: FilterPreset,
   adjustments: AdjustmentSettings
 ): Promise<{ uri: string; width: number; height: number }> {
-  // Normalize to manageable working resolution (max 1200px wide) for instant mobile processing
+  // Normalize to high-detail working resolution (max 1600px wide) for crisp text output
   const working = await ImageManipulator.manipulateAsync(
     sourceUri,
-    [{ resize: { width: 1200 } }],
-    { compress: 0.92, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+    [{ resize: { width: 1600 } }],
+    { compress: 0.95, format: ImageManipulator.SaveFormat.JPEG, base64: true }
   );
 
   if (!working.base64) {
@@ -121,7 +121,7 @@ export async function processScanPage(
     },
   };
 
-  const targetDims = estimateTargetDimensions(pixelQuad, 1200);
+  const targetDims = estimateTargetDimensions(pixelQuad, 1600);
   const warped = warpPerspectiveRgba(
     decoded.data,
     decoded.width,
@@ -145,7 +145,7 @@ export async function processScanPage(
       width: targetDims.width,
       height: targetDims.height,
     },
-    90
+    94
   );
 
   const base64Jpg = uint8ArrayToBase64(encoded.data);

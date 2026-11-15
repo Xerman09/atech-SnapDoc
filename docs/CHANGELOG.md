@@ -3,6 +3,12 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Improved (CamScanner-Grade Crop & Filter Precision)
+- Fixed letterbox aspect-ratio mismatch in `CropAndEnhanceScreen.tsx` by measuring natural image dimensions via `Image.getSize()` and pinning the 4-point crop overlay directly to the rendered image bounds (`imgRect`).
+- Added 3x3 Gaussian smoothing and weighted Sobel edge localization in `src/services/cv/edgeDetector.ts` to reduce desk-texture noise.
+- Upgraded `Magic Color` and `B&W Scan` in `src/services/filters/scanFilters.ts` with integral-image local illumination normalization (shadow removal across uneven lighting).
+- Increased working resolution to `1600px` and JPEG output quality to `94%` in `src/services/cv/imagePipeline.ts`.
+
 ### Fixed (Android Safe Area Insets)
 - Installed `react-native-safe-area-context`, wrapped `App.tsx` in `<SafeAreaProvider>`, and replaced `react-native`'s `SafeAreaView` with `SafeAreaView` from `react-native-safe-area-context` across `StudioShell.tsx`, `CaptureScreen.tsx`, and `CropAndEnhanceScreen.tsx` to prevent status bar and navigation bar overlap on Android.
 - Added `.agents/rules/safe-area.md` to enforce `react-native-safe-area-context` on all future screens.

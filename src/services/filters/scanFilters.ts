@@ -5,15 +5,16 @@ function clampByte(v: number): number {
 }
 
 /**
- * Applies integral-image local adaptive thresholding for crisp B&W document scans.
+ * Computes a fast O(W*H) local mean illumination map using an integral image.
  */
-function applyAdaptiveBwThreshold(
+function computeLocalMean(
   gray: Uint8Array,
   width: number,
-  height: number
-): Uint8Array {
-  const integral = new Float64Array((width + 1) * (height + 1));
+  height: number,
+  radius: number
+): Float32Array {
   const stride = width + 1;
+  const integral = new Float64Array((height + 1) * stride);
 
   for (let y = 1; y <= height; y++) {
     let rowSum = 0;
@@ -23,36 +24,28 @@ function applyAdaptiveBwThreshold(
     }
   }
 
-  const radius = Math.max(8, Math.round(Math.min(width, height) / 36));
-  const bias = 12;
-  const out = new Uint8Array(width * height);
-
+  const mean = new Float32Array(width * height);
   for (let y = 0; y < height; y++) {
     const y0 = Math.max(0, y - radius);
     const y1 = Math.min(height - 1, y + radius);
     for (let x = 0; x < width; x++) {
       const x0 = Math.max(0, x - radius);
       const x1 = Math.min(width - 1, x + radius);
-
       const area = (x1 - x0 + 1) * (y1 - y0 + 1);
       const sum =
         integral[(y1 + 1) * stride + (x1 + 1)] -
         integral[y0 * stride + (x1 + 1)] -
         integral[(y1 + 1) * stride + x0] +
         integral[y0 * stride + x0];
-
-      const localMean = sum / area;
-      const px = gray[y * width + x];
-      out[y * width + x] = px < localMean - bias ? 0 : 255;
+      mean[y * width + x] = sum / area;
     }
   }
-
-  return out;
+  return mean;
 }
 
 /**
- * Applies CamScanner-style presets and manual Brightness/Contrast/Sharpness
- * to an RGBA pixel buffer, returning a new RGBA Uint8Array.
+ * Applies CamScanner-style presets with local shadow/illumination normalization
+ * and manual Brightness/Contrast/Sharpness adjustments.
  */
 export function applyScanFilterToRgba(
   src: Uint8Array,
@@ -72,19 +65,33 @@ export function applyScanFilterToRgba(
     for (let i = 0; i < totalPixels; i++) {
       const idx = i * 4;
       const luma = 0.299 * src[idx] + 0.587 * src[idx + 1] + 0.114 * src[idx + 2];
-      const adjusted = (luma - 128) * contrastFactor + 128 + brightnessOffset;
-      gray[i] = clampByte(adjusted);
+      gray[i] = clampByte((luma - 128) * contrastFactor + 128 + brightnessOffset);
     }
-    const bw = applyAdaptiveBwThreshold(gray, width, height);
+    const radius = Math.max(8, Math.round(Math.min(width, height) / 28));
+    const localMean = computeLocalMean(gray, width, height, radius);
+    const bias = 10;
+
     for (let i = 0; i < totalPixels; i++) {
       const idx = i * 4;
-      const v = bw[i];
+      const v = gray[i] < localMean[i] - bias ? 0 : 255;
       out[idx] = v;
       out[idx + 1] = v;
       out[idx + 2] = v;
       out[idx + 3] = 255;
     }
     return out;
+  }
+
+  // For Magic Color, compute local illumination map to remove shadows across the page
+  let localBg: Float32Array | null = null;
+  if (filter === 'magic_color') {
+    const gray = new Uint8Array(totalPixels);
+    for (let i = 0; i < totalPixels; i++) {
+      const idx = i * 4;
+      gray[i] = clampByte(0.299 * src[idx] + 0.587 * src[idx + 1] + 0.114 * src[idx + 2]);
+    }
+    const radius = Math.max(14, Math.round(Math.min(width, height) / 14));
+    localBg = computeLocalMean(gray, width, height, radius);
   }
 
   for (let i = 0; i < totalPixels; i++) {
@@ -98,16 +105,20 @@ export function applyScanFilterToRgba(
       r = luma;
       g = luma;
       b = luma;
-    } else if (filter === 'magic_color') {
-      // Boost contrast & brighten paper background while keeping ink crisp
-      const luma = 0.299 * r + 0.587 * g + 0.114 * b;
-      const boost = luma > 165 ? 1.18 : 0.92;
-      r = (r - 128) * 1.28 + 128 * boost;
-      g = (g - 128) * 1.28 + 128 * boost;
-      b = (b - 128) * 1.28 + 128 * boost;
+    } else if (filter === 'magic_color' && localBg) {
+      // Shadow-removal illumination normalization + crisp ink contrast
+      const bg = Math.max(40, localBg[i]);
+      const gain = Math.min(2.2, 238 / bg);
+      r = Math.min(255, r * gain);
+      g = Math.min(255, g * gain);
+      b = Math.min(255, b * gain);
+
+      // Clean white paper push & text darkening
+      r = (r - 135) * 1.24 + 145;
+      g = (g - 135) * 1.24 + 145;
+      b = (b - 135) * 1.24 + 145;
     }
 
-    // Apply user brightness & contrast
     r = (r - 128) * contrastFactor + 128 + brightnessOffset;
     g = (g - 128) * contrastFactor + 128 + brightnessOffset;
     b = (b - 128) * contrastFactor + 128 + brightnessOffset;
@@ -118,9 +129,9 @@ export function applyScanFilterToRgba(
     out[idx + 3] = 255;
   }
 
-  // Optional unsharp-mask pass when sharpness > 0
+  // Unsharp mask sharpening
   if (adjustments.sharpness > 0 && width > 2 && height > 2) {
-    const amount = (adjustments.sharpness / 100) * 0.85;
+    const amount = (adjustments.sharpness / 100) * 0.9;
     const copy = new Uint8Array(out);
     for (let y = 1; y < height - 1; y++) {
       for (let x = 1; x < width - 1; x++) {

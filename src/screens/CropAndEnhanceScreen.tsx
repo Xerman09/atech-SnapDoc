@@ -71,15 +71,43 @@ export function CropAndEnhanceScreen({
   const [adjustments, setAdjustments] = useState<AdjustmentSettings>(DEFAULT_ADJUSTMENTS);
   const [busy, setBusy] = useState(false);
   const [boxSize, setBoxSize] = useState({ width: 300, height: 400 });
+  const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
 
-  const boxRef = useRef(boxSize);
-  boxRef.current = boxSize;
+  const imgRect = useMemo(() => {
+    if (!naturalSize || naturalSize.width <= 0 || naturalSize.height <= 0) {
+      return { left: 0, top: 0, width: boxSize.width, height: boxSize.height };
+    }
+    const scale = Math.min(
+      boxSize.width / naturalSize.width,
+      boxSize.height / naturalSize.height
+    );
+    const width = naturalSize.width * scale;
+    const height = naturalSize.height * scale;
+    return {
+      left: (boxSize.width - width) / 2,
+      top: (boxSize.height - height) / 2,
+      width,
+      height,
+    };
+  }, [boxSize, naturalSize]);
+
+  const imgRectRef = useRef(imgRect);
+  imgRectRef.current = imgRect;
 
   const quadRef = useRef(quad);
   quadRef.current = quad;
 
   useEffect(() => {
     let active = true;
+    Image.getSize(
+      sourceUri,
+      (w, h) => {
+        if (active && w > 0 && h > 0) setNaturalSize({ width: w, height: h });
+      },
+      () => {
+        if (active) setNaturalSize(null);
+      }
+    );
     setBusy(true);
     autoDetectNormalizedQuad(sourceUri)
       .then((detected) => {
@@ -108,8 +136,8 @@ export function CropAndEnhanceScreen({
         startPoint = { ...quadRef.current[corner] };
       },
       onPanResponderMove: (_, gesture) => {
-        const w = Math.max(1, boxRef.current.width);
-        const h = Math.max(1, boxRef.current.height);
+        const w = Math.max(1, imgRectRef.current.width);
+        const h = Math.max(1, imgRectRef.current.height);
         const nextX = clamp01(startPoint.x + gesture.dx / w);
         const nextY = clamp01(startPoint.y + gesture.dy / h);
         setQuad((prev) => ({
@@ -167,10 +195,10 @@ export function CropAndEnhanceScreen({
   };
 
   const polygonPoints = [
-    `${quad.topLeft.x * boxSize.width},${quad.topLeft.y * boxSize.height}`,
-    `${quad.topRight.x * boxSize.width},${quad.topRight.y * boxSize.height}`,
-    `${quad.bottomRight.x * boxSize.width},${quad.bottomRight.y * boxSize.height}`,
-    `${quad.bottomLeft.x * boxSize.width},${quad.bottomLeft.y * boxSize.height}`,
+    `${quad.topLeft.x * imgRect.width},${quad.topLeft.y * imgRect.height}`,
+    `${quad.topRight.x * imgRect.width},${quad.topRight.y * imgRect.height}`,
+    `${quad.bottomRight.x * imgRect.width},${quad.bottomRight.y * imgRect.height}`,
+    `${quad.bottomLeft.x * imgRect.width},${quad.bottomLeft.y * imgRect.height}`,
   ].join(' ');
 
   return (
@@ -228,8 +256,16 @@ export function CropAndEnhanceScreen({
         />
 
         {step === 'crop' ? (
-          <View style={styles.overlayLayer}>
-            <Svg width={boxSize.width} height={boxSize.height}>
+          <View
+            style={{
+              position: 'absolute',
+              left: imgRect.left,
+              top: imgRect.top,
+              width: imgRect.width,
+              height: imgRect.height,
+            }}
+          >
+            <Svg width={imgRect.width} height={imgRect.height}>
               <Polygon
                 points={polygonPoints}
                 fill="rgba(96, 165, 250, 0.16)"
@@ -251,8 +287,8 @@ export function CropAndEnhanceScreen({
                     style={[
                       styles.handle,
                       {
-                        left: pt.x * boxSize.width - 14,
-                        top: pt.y * boxSize.height - 14,
+                        left: pt.x * imgRect.width - 14,
+                        top: pt.y * imgRect.height - 14,
                         borderColor: colors.primary,
                       },
                     ]}
