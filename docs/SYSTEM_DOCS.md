@@ -22,10 +22,10 @@ SnapDoc runs completely offline on the user's device. Document capture, edge det
 
 | Feature | Status | Phase | Notes |
 | :--- | :--- | :--- | :--- |
-| Project Foundation (Expo + TS + Hermes) | In Progress | Phase 1 | Core scaffold & modular structure |
-| Light Mode & Dark Mode Theme System | In Progress | Phase 1 | System-aware + manual toggle, WCAG AA contrast |
-| Human-Readable Date Formatting | In Progress | Phase 1 | Centralized `src/utils/dateFormat.ts` |
-| System Docs & Agent Rules | Active | Phase 1 | `.agents/rules/` + `docs/` |
+| Project Foundation (Expo + TS + Hermes) | Completed | Phase 1 | Core scaffold & modular structure (`tsc --noEmit` verified) |
+| Light Mode & Dark Mode Theme System | Completed | Phase 1 | System-aware + manual toggle, WCAG AA contrast (`src/theme/`) |
+| Human-Readable Date Formatting | Completed | Phase 1 | Centralized `src/utils/dateFormat.ts` |
+| System Docs & Agent Rules | Active | Phase 1 | `.agents/rules/` + `AGENTS.md` + `docs/` |
 | Brand Identity & Custom Logo | Planned | Phase 2 | Original vector/PNG icon & splash |
 | Legal, Privacy & Compliance Screens | Planned | Phase 2 | Offline Privacy, Terms, Refund, Cookie, Data Deletion |
 | Live Camera & Safe Image Import | Planned | Phase 3 | Offline camera + validated gallery import |
