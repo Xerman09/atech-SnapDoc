@@ -3,6 +3,13 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Release v1.0.3 — Precision Auto-Crop & CamScanner-Grade Output
+- Upgraded `src/services/cv/edgeDetector.ts` from single-point quadrant scoring to multi-channel (RGB + Luma) Sobel + 1D Non-Maximum Suppression + directed 4-side Hough line voting + multi-candidate 4-side edge-support scoring + weighted least-squares line refinement, so auto-crop snaps to the document's true 4 edges rather than distracting desk/border edges.
+- Upgraded `src/services/filters/scanFilters.ts` with separable morphological local-max paper background estimation (halo-free shadow removal in `Magic Color` and `Grayscale`), subtle saturation & ink contrast tuning, anti-aliased smoothstep adaptive thresholding in `B&W Scan`, and automatic subtle unsharp masking for crisp text.
+- Increased auto-detect analysis width to `400px` and max warped output dimension to `1800px` in `src/services/cv/imagePipeline.ts`.
+- Added unit test in `src/__tests__/cvAndFilters.test.ts` verifying document corner localization with a distracting background border strip.
+- Bumped app version to `1.0.3` (`android.versionCode: 3`).
+
 ### Release v1.0.2
 - Bumped app version to `1.0.2` (`android.versionCode: 2`) in `app.json`, `package.json`, and `src/constants/legal.ts` to publish the Android image-processing & file I/O fix (`Buffer` polyfill + awaited `expo-file-system` `write`/`copySync`) as an OTA/in-app update.
 

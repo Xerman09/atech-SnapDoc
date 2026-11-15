@@ -64,8 +64,8 @@ export async function autoDetectNormalizedQuad(uri: string): Promise<CropQuad> {
   try {
     const thumb = await ImageManipulator.manipulateAsync(
       uri,
-      [{ resize: { width: 320 } }],
-      { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+      [{ resize: { width: 400 } }],
+      { compress: 0.88, format: ImageManipulator.SaveFormat.JPEG, base64: true }
     );
     if (!thumb.base64) {
       return getDefaultCropQuad(1, 1, 0.08);
@@ -129,7 +129,7 @@ export async function processScanPage(
     },
   };
 
-  const targetDims = estimateTargetDimensions(pixelQuad, 1600);
+  const targetDims = estimateTargetDimensions(pixelQuad, 1800);
   const warped = warpPerspectiveRgba(
     decoded.data,
     decoded.width,

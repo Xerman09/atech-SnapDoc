@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { detectDocumentQuad } from '../services/cv/edgeDetector';
 import {
   orderQuadCorners,
   warpPerspectiveRgba,
@@ -64,5 +65,40 @@ describe('CV geometry and scan filter engine', () => {
       const val = bw[i * 4];
       expect(val === 0 || val === 255).toBe(true);
     }
+  });
+
+  it('detects document corners accurately even with a distracting border edge', () => {
+    const w = 160;
+    const h = 120;
+    const rgba = new Uint8Array(w * h * 4);
+
+    // Fill with warm wooden desk color + a bright strip on the far left edge (like a desk edge)
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const idx = (y * w + x) * 4;
+        const isLeftStrip = x < 12;
+        rgba[idx] = isLeftStrip ? 235 : 135;
+        rgba[idx + 1] = isLeftStrip ? 235 : 105;
+        rgba[idx + 2] = isLeftStrip ? 235 : 80;
+        rgba[idx + 3] = 255;
+      }
+    }
+
+    // Draw a crisp document card inside [35..125] x [25..95]
+    for (let y = 25; y <= 95; y++) {
+      for (let x = 35; x <= 125; x++) {
+        const idx = (y * w + x) * 4;
+        rgba[idx] = 240;
+        rgba[idx + 1] = 242;
+        rgba[idx + 2] = 245;
+        rgba[idx + 3] = 255;
+      }
+    }
+
+    const quad = detectDocumentQuad(rgba, w, h);
+    expect(Math.abs(quad.topLeft.x - 35)).toBeLessThanOrEqual(4);
+    expect(Math.abs(quad.topLeft.y - 25)).toBeLessThanOrEqual(4);
+    expect(Math.abs(quad.bottomRight.x - 125)).toBeLessThanOrEqual(4);
+    expect(Math.abs(quad.bottomRight.y - 95)).toBeLessThanOrEqual(4);
   });
 });

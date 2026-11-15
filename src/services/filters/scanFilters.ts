@@ -44,8 +44,74 @@ function computeLocalMean(
 }
 
 /**
- * Applies CamScanner-style presets with local shadow/illumination normalization
- * and manual Brightness/Contrast/Sharpness adjustments.
+ * Estimates local paper illumination by taking a separable 1D local max
+ * (ignoring dark ink/text) followed by a smooth box average.
+ */
+function computeLocalPaperBackground(
+  gray: Uint8Array,
+  width: number,
+  height: number,
+  radius: number
+): Float32Array {
+  const total = width * height;
+  const horizMax = new Uint8Array(total);
+  const deque = new Int32Array(width);
+
+  // Horizontal sliding window max (O(W*H))
+  for (let y = 0; y < height; y++) {
+    const row = y * width;
+    let head = 0;
+    let tail = 0;
+    for (let x = 0; x < width + radius; x++) {
+      if (x < width) {
+        const val = gray[row + x];
+        while (tail > head && gray[row + deque[tail - 1]] <= val) {
+          tail--;
+        }
+        deque[tail++] = x;
+      }
+      const outX = x - radius;
+      if (outX >= 0) {
+        while (head < tail && deque[head] < outX - radius) {
+          head++;
+        }
+        horizMax[row + outX] = gray[row + deque[head]];
+      }
+    }
+  }
+
+  // Vertical sliding window max (O(W*H))
+  const localMax = new Uint8Array(total);
+  const vDeque = new Int32Array(height);
+  for (let x = 0; x < width; x++) {
+    let head = 0;
+    let tail = 0;
+    for (let y = 0; y < height + radius; y++) {
+      if (y < height) {
+        const val = horizMax[y * width + x];
+        while (tail > head && horizMax[vDeque[tail - 1] * width + x] <= val) {
+          tail--;
+        }
+        vDeque[tail++] = y;
+      }
+      const outY = y - radius;
+      if (outY >= 0) {
+        while (head < tail && vDeque[head] < outY - radius) {
+          head++;
+        }
+        localMax[outY * width + x] = horizMax[vDeque[head] * width + x];
+      }
+    }
+  }
+
+  // Smooth the morphological max map so illumination transitions have zero banding
+  const smoothRadius = Math.max(4, Math.round(radius * 0.75));
+  return computeLocalMean(localMax, width, height, smoothRadius);
+}
+
+/**
+ * Applies CamScanner-style presets with morphological paper-background
+ * shadow removal, anti-aliased B&W ink, and crisp unsharp masking.
  */
 export function applyScanFilterToRgba(
   src: Uint8Array,
@@ -67,13 +133,25 @@ export function applyScanFilterToRgba(
       const luma = 0.299 * src[idx] + 0.587 * src[idx + 1] + 0.114 * src[idx + 2];
       gray[i] = clampByte((luma - 128) * contrastFactor + 128 + brightnessOffset);
     }
-    const radius = Math.max(8, Math.round(Math.min(width, height) / 28));
+    const radius = Math.max(8, Math.round(Math.min(width, height) / 26));
     const localMean = computeLocalMean(gray, width, height, radius);
-    const bias = 10;
+    const bias = 9;
+    const ramp = 10;
 
     for (let i = 0; i < totalPixels; i++) {
       const idx = i * 4;
-      const v = gray[i] < localMean[i] - bias ? 0 : 255;
+      const diff = gray[i] - (localMean[i] - bias);
+      let v: number;
+      if (diff <= -ramp) {
+        v = 0;
+      } else if (diff >= ramp) {
+        v = 255;
+      } else {
+        const t = (diff + ramp) / (2 * ramp);
+        // Smoothstep for crisp, anti-aliased laser-scan edges
+        const s = t * t * (3 - 2 * t);
+        v = Math.round(s * 255);
+      }
       out[idx] = v;
       out[idx + 1] = v;
       out[idx + 2] = v;
@@ -82,16 +160,15 @@ export function applyScanFilterToRgba(
     return out;
   }
 
-  // For Magic Color, compute local illumination map to remove shadows across the page
-  let localBg: Float32Array | null = null;
-  if (filter === 'magic_color') {
+  let paperBg: Float32Array | null = null;
+  if (filter === 'magic_color' || filter === 'grayscale') {
     const gray = new Uint8Array(totalPixels);
     for (let i = 0; i < totalPixels; i++) {
       const idx = i * 4;
       gray[i] = clampByte(0.299 * src[idx] + 0.587 * src[idx + 1] + 0.114 * src[idx + 2]);
     }
-    const radius = Math.max(14, Math.round(Math.min(width, height) / 14));
-    localBg = computeLocalMean(gray, width, height, radius);
+    const radius = Math.max(10, Math.round(Math.min(width, height) / 26));
+    paperBg = computeLocalPaperBackground(gray, width, height, radius);
   }
 
   for (let i = 0; i < totalPixels; i++) {
@@ -101,22 +178,35 @@ export function applyScanFilterToRgba(
     let b = src[idx + 2];
 
     if (filter === 'grayscale') {
-      const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+      let luma = 0.299 * r + 0.587 * g + 0.114 * b;
+      if (paperBg) {
+        const bg = Math.max(45, paperBg[i]);
+        const normalized = Math.min(255, (luma * 242) / bg);
+        luma = luma * 0.35 + normalized * 0.65;
+        // Gentle photocopy contrast
+        luma = (luma - 130) * 1.18 + 136;
+      }
       r = luma;
       g = luma;
       b = luma;
-    } else if (filter === 'magic_color' && localBg) {
-      // Shadow-removal illumination normalization + crisp ink contrast
-      const bg = Math.max(40, localBg[i]);
-      const gain = Math.min(2.2, 238 / bg);
+    } else if (filter === 'magic_color' && paperBg) {
+      // Flatten uneven shadows using paper-background estimate (no ink halos)
+      const bg = Math.max(45, paperBg[i]);
+      const gain = Math.min(2.1, Math.max(0.85, 244 / bg));
       r = Math.min(255, r * gain);
       g = Math.min(255, g * gain);
       b = Math.min(255, b * gain);
 
-      // Clean white paper push & text darkening
-      r = (r - 135) * 1.24 + 145;
-      g = (g - 135) * 1.24 + 145;
-      b = (b - 135) * 1.24 + 145;
+      // Gentle document white-point lift & ink deepening
+      const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+      const satBoost = 1.16;
+      r = luma + (r - luma) * satBoost;
+      g = luma + (g - luma) * satBoost;
+      b = luma + (b - luma) * satBoost;
+
+      r = (r - 132) * 1.2 + 140;
+      g = (g - 132) * 1.2 + 140;
+      b = (b - 132) * 1.2 + 140;
     }
 
     r = (r - 128) * contrastFactor + 128 + brightnessOffset;
@@ -129,9 +219,12 @@ export function applyScanFilterToRgba(
     out[idx + 3] = 255;
   }
 
-  // Unsharp mask sharpening
-  if (adjustments.sharpness > 0 && width > 2 && height > 2) {
-    const amount = (adjustments.sharpness / 100) * 0.9;
+  // Unsharp mask sharpening: automatic subtle clarity for magic_color / grayscale + user slider
+  const baseSharp =
+    filter === 'magic_color' ? 0.28 : filter === 'grayscale' ? 0.2 : 0;
+  const sharpAmount = baseSharp + (adjustments.sharpness / 100) * 0.85;
+
+  if (sharpAmount > 0 && width > 2 && height > 2) {
     const copy = new Uint8Array(out);
     for (let y = 1; y < height - 1; y++) {
       for (let x = 1; x < width - 1; x++) {
@@ -142,8 +235,9 @@ export function applyScanFilterToRgba(
         const right = (y * width + (x + 1)) * 4;
 
         for (let c = 0; c < 3; c++) {
-          const avg = (copy[up + c] + copy[down + c] + copy[left + c] + copy[right + c]) * 0.25;
-          out[idx + c] = clampByte(copy[idx + c] + (copy[idx + c] - avg) * amount);
+          const avg =
+            (copy[up + c] + copy[down + c] + copy[left + c] + copy[right + c]) * 0.25;
+          out[idx + c] = clampByte(copy[idx + c] + (copy[idx + c] - avg) * sharpAmount);
         }
       }
     }
