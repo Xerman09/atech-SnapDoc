@@ -3,6 +3,9 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Fixed (Metro Resolver)
+- Updated `metro.config.js` to keep `unstable_enablePackageExports` enabled for React Native 0.88 (`react-native/react-private-interface`) while routing only `tslib` to `tslib/tslib.js`.
+
 ### Fixed (CI)
 - Removed `android-actions/setup-android@v3` from `.github/workflows/build-apk.yml` (which failed looking for deprecated `tools` package) so Gradle uses the pre-installed Android SDK on `ubuntu-latest`.
 
