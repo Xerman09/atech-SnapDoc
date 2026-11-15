@@ -463,46 +463,42 @@ function MainApp() {
           ) : null}
         </View>
 
-        {/* Feature Tools Grid */}
-        <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
-            TOOLS & FEATURES
-          </Text>
-        </View>
-
-        <View style={styles.toolsGrid}>
-          <Pressable
-            onPress={() => {
-              setActiveDoc(null);
-              setRoute('capture');
-            }}
-            accessibilityRole="button"
-            accessibilityLabel="Smart Camera Scan"
-            style={({ pressed }) => [
-              styles.toolCard,
-              {
-                backgroundColor: colors.primary,
-                borderColor: colors.primary,
-                opacity: pressed ? 0.9 : 1,
-              },
-            ]}
-          >
-            <View style={[styles.toolIconBox, { backgroundColor: 'rgba(255,255,255,0.16)' }]}>
-              <Ionicons name="camera-outline" size={20} color={colors.primaryText} />
-            </View>
-            <Text style={[styles.toolTitle, { color: colors.primaryText }]}>
-              Smart Scan
+        {/* Hero Smart Scan Card */}
+        <Pressable
+          onPress={() => {
+            setActiveDoc(null);
+            setRoute('capture');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Smart Camera Scan"
+          style={({ pressed }) => [
+            styles.heroCard,
+            {
+              backgroundColor: colors.heroBg,
+              borderColor: colors.heroBorder,
+              opacity: pressed ? 0.94 : 1,
+              transform: [{ scale: pressed ? 0.99 : 1 }],
+            },
+          ]}
+        >
+          <View style={styles.heroIconBadge}>
+            <Ionicons name="scan-outline" size={24} color={colors.heroText} />
+          </View>
+          <View style={styles.heroTextGroup}>
+            <Text style={[styles.heroTitle, { color: colors.heroText }]}>
+              Scan Document
             </Text>
-            <Text
-              style={[
-                styles.toolDesc,
-                { color: resolvedScheme === 'dark' ? '#334155' : '#CBD5E1' },
-              ]}
-            >
-              Capture & auto-crop
+            <Text style={[styles.heroSubtitle, { color: colors.heroSubtext }]}>
+              Auto-crop edges, flatten shadows & save PDF
             </Text>
-          </Pressable>
+          </View>
+          <View style={styles.heroArrowPill}>
+            <Ionicons name="arrow-forward" size={16} color={colors.heroText} />
+          </View>
+        </Pressable>
 
+        {/* Quick Actions Row */}
+        <View style={styles.quickRow}>
           <Pressable
             onPress={() => {
               setActiveDoc(null);
@@ -511,22 +507,23 @@ function MainApp() {
             accessibilityRole="button"
             accessibilityLabel="Import Photos"
             style={({ pressed }) => [
-              styles.toolCard,
+              styles.quickCard,
               {
                 backgroundColor: colors.surface,
                 borderColor: colors.border,
-                opacity: pressed ? 0.85 : 1,
+                opacity: pressed ? 0.88 : 1,
+                transform: [{ scale: pressed ? 0.98 : 1 }],
               },
             ]}
           >
-            <View style={[styles.toolIconBox, { backgroundColor: colors.accentSoft }]}>
-              <Ionicons name="images-outline" size={20} color={colors.accent} />
+            <View style={[styles.quickIconBox, { backgroundColor: colors.accentSoft }]}>
+              <Ionicons name="images-outline" size={19} color={colors.accent} />
             </View>
-            <Text style={[styles.toolTitle, { color: colors.textPrimary }]}>
-              Import Photos
+            <Text style={[styles.quickTitle, { color: colors.textPrimary }]}>
+              Import
             </Text>
-            <Text style={[styles.toolDesc, { color: colors.textSecondary }]}>
-              JPG, PNG & WebP
+            <Text style={[styles.quickDesc, { color: colors.textMuted }]}>
+              Gallery
             </Text>
           </Pressable>
 
@@ -535,22 +532,23 @@ function MainApp() {
             accessibilityRole="button"
             accessibilityLabel="Crop and Enhance Filters"
             style={({ pressed }) => [
-              styles.toolCard,
+              styles.quickCard,
               {
                 backgroundColor: colors.surface,
                 borderColor: colors.border,
-                opacity: pressed ? 0.85 : 1,
+                opacity: pressed ? 0.88 : 1,
+                transform: [{ scale: pressed ? 0.98 : 1 }],
               },
             ]}
           >
-            <View style={[styles.toolIconBox, { backgroundColor: colors.accentSoft }]}>
-              <Ionicons name="color-wand-outline" size={20} color={colors.accent} />
+            <View style={[styles.quickIconBox, { backgroundColor: colors.accentSoft }]}>
+              <Ionicons name="color-wand-outline" size={19} color={colors.accent} />
             </View>
-            <Text style={[styles.toolTitle, { color: colors.textPrimary }]}>
-              Crop & Filters
+            <Text style={[styles.quickTitle, { color: colors.textPrimary }]}>
+              Enhance
             </Text>
-            <Text style={[styles.toolDesc, { color: colors.textSecondary }]}>
-              Magic Color & B&W
+            <Text style={[styles.quickDesc, { color: colors.textMuted }]}>
+              Filters
             </Text>
           </Pressable>
 
@@ -559,22 +557,23 @@ function MainApp() {
             accessibilityRole="button"
             accessibilityLabel="Export to PDF or Image"
             style={({ pressed }) => [
-              styles.toolCard,
+              styles.quickCard,
               {
                 backgroundColor: colors.surface,
                 borderColor: colors.border,
-                opacity: pressed ? 0.85 : 1,
+                opacity: pressed ? 0.88 : 1,
+                transform: [{ scale: pressed ? 0.98 : 1 }],
               },
             ]}
           >
-            <View style={[styles.toolIconBox, { backgroundColor: colors.accentSoft }]}>
-              <Ionicons name="document-text-outline" size={20} color={colors.accent} />
+            <View style={[styles.quickIconBox, { backgroundColor: colors.accentSoft }]}>
+              <Ionicons name="document-text-outline" size={19} color={colors.accent} />
             </View>
-            <Text style={[styles.toolTitle, { color: colors.textPrimary }]}>
-              PDF & Image
+            <Text style={[styles.quickTitle, { color: colors.textPrimary }]}>
+              Export
             </Text>
-            <Text style={[styles.toolDesc, { color: colors.textSecondary }]}>
-              Export A4 or JPG/PNG
+            <Text style={[styles.quickDesc, { color: colors.textMuted }]}>
+              PDF & JPG
             </Text>
           </Pressable>
         </View>
@@ -584,9 +583,11 @@ function MainApp() {
           <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
             RECENT DOCUMENTS
           </Text>
-          <Text style={[styles.sectionCount, { color: colors.textMuted }]}>
-            {filteredDocuments.length}
-          </Text>
+          <View style={[styles.countPill, { backgroundColor: colors.surfaceElevated }]}>
+            <Text style={[styles.sectionCount, { color: colors.textSecondary }]}>
+              {filteredDocuments.length}
+            </Text>
+          </View>
         </View>
 
         <FlatList
@@ -670,9 +671,16 @@ function MainApp() {
                   <Text style={[styles.pageTitle, { color: colors.textPrimary }]} numberOfLines={1}>
                     {item.title}
                   </Text>
-                  <Text style={[styles.pageSubtitle, { color: colors.textSecondary }]}>
-                    {item.pageCount} {item.pageCount === 1 ? 'page' : 'pages'} • {formattedDate}
-                  </Text>
+                  <View style={styles.pageSubRow}>
+                    <View style={[styles.pageBadge, { backgroundColor: colors.surfaceElevated }]}>
+                      <Text style={[styles.pageBadgeText, { color: colors.textSecondary }]}>
+                        {item.pageCount} {item.pageCount === 1 ? 'pg' : 'pgs'}
+                      </Text>
+                    </View>
+                    <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
+                      {formattedDate}
+                    </Text>
+                  </View>
                 </View>
                 <Pressable
                   onPress={() => openDocument(item, 'export')}
@@ -682,11 +690,35 @@ function MainApp() {
                 >
                   <Ionicons name="share-outline" size={16} color={colors.accent} />
                 </Pressable>
+                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
               </Pressable>
             );
           }}
         />
       </ScrollView>
+
+      {/* Floating Scan Action Button */}
+      <Pressable
+        onPress={() => {
+          setActiveDoc(null);
+          setRoute('capture');
+        }}
+        accessibilityRole="button"
+        accessibilityLabel="Quick camera scan"
+        style={({ pressed }) => [
+          styles.fab,
+          {
+            backgroundColor: colors.heroBg,
+            borderColor: colors.heroBorder,
+            opacity: pressed ? 0.92 : 1,
+            transform: [{ scale: pressed ? 0.96 : 1 }],
+          },
+        ]}
+      >
+        <Ionicons name="camera" size={20} color={colors.heroText} />
+        <Text style={[styles.fabText, { color: colors.heroText }]}>Scan</Text>
+      </Pressable>
+
       <UpdateModal
         manifest={availableUpdate}
         onDismiss={() => setAvailableUpdate(null)}
@@ -713,8 +745,8 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 32,
+    paddingTop: 16,
+    paddingBottom: 96,
     gap: 14,
   },
   topBar: {
@@ -765,42 +797,114 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.8,
   },
+  countPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 999,
+  },
   sectionCount: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 11.5,
+    fontWeight: '700',
   },
-  toolsGrid: {
+  heroCard: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  toolCard: {
-    width: '48.4%',
-    borderRadius: 16,
+    alignItems: 'center',
+    borderRadius: 18,
     borderWidth: 1,
-    padding: 14,
-    gap: 6,
-    shadowColor: '#000000',
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 1,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    gap: 14,
+    shadowColor: '#1546B8',
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
   },
-  toolIconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
+  heroIconBadge: {
+    width: 46,
+    height: 46,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 4,
   },
-  toolTitle: {
-    fontSize: 15,
+  heroTextGroup: {
+    flex: 1,
+    gap: 3,
+  },
+  heroTitle: {
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  heroSubtitle: {
+    fontSize: 12.5,
+    fontWeight: '500',
+  },
+  heroArrowPill: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  quickCard: {
+    flex: 1,
+    alignItems: 'center',
+    borderRadius: 16,
+    borderWidth: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    gap: 5,
+    shadowColor: '#000000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  quickIconBox: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
+  },
+  quickTitle: {
+    fontSize: 13.5,
     fontWeight: '700',
     letterSpacing: -0.2,
   },
-  toolDesc: {
-    fontSize: 12,
+  quickDesc: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 13,
+    borderRadius: 999,
+    borderWidth: 1,
+    shadowColor: '#1546B8',
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  fabText: {
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: -0.2,
   },
   listContent: {
     gap: 10,
@@ -846,10 +950,15 @@ const styles = StyleSheet.create({
   pageCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     padding: 12,
-    gap: 14,
+    gap: 12,
+    shadowColor: '#000000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
   thumb: {
     width: 50,
@@ -867,7 +976,21 @@ const styles = StyleSheet.create({
   },
   pageMeta: {
     flex: 1,
-    gap: 3,
+    gap: 6,
+  },
+  pageSubRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  pageBadge: {
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  pageBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   pageTitle: {
     fontSize: 15,
@@ -875,7 +998,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
   },
   pageSubtitle: {
-    fontSize: 12.5,
+    fontSize: 12,
   },
   quickExportBtn: {
     width: 34,

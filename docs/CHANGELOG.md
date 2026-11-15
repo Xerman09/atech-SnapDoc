@@ -3,6 +3,10 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Improved (Premium UI Upgrade)
+- Added `heroBg`, `heroBorder`, `heroText`, and `heroSubtext` theme tokens in `src/theme/colors.ts` for both Light Mode and Dark Mode with WCAG AA contrast.
+- Redesigned the Home screen in `App.tsx` with a full-width cobalt **Scan Document** hero card, a 3-column **Import / Enhance / Export** quick-action bar, elevated document cards with page-count pills, and a floating **Scan** action button.
+
 ### Improved (Minimized & Faster GitHub Actions CI)
 - Added `concurrency` (`cancel-in-progress: true`) and `paths-ignore` (`docs/**`, `*.md`, `.agents/**`, `update-manifest.json`) in `.github/workflows/build-apk.yml` to cancel superseded runs and skip docs-only pushes.
 - Added `gradle/actions/setup-gradle@v4` caching, `--build-cache`, `--prefer-offline --no-audit`, and targeted `arm64-v8a` ABI to cut APK build time and output size.

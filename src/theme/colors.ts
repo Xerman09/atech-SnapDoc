@@ -9,6 +9,10 @@ export interface AppPalette {
   primaryText: string;
   accent: string;
   accentSoft: string;
+  heroBg: string;
+  heroBorder: string;
+  heroText: string;
+  heroSubtext: string;
   border: string;
   borderSubtle: string;
   success: string;
@@ -31,6 +35,10 @@ export const lightPalette: AppPalette = {
   primaryText: '#FFFFFF',
   accent: '#1546B8',
   accentSoft: '#EBF1FC',
+  heroBg: '#1546B8',
+  heroBorder: '#123B9C',
+  heroText: '#FFFFFF',
+  heroSubtext: '#DCE7FE',
   border: '#DFDDD5',
   borderSubtle: '#ECEAE3',
   success: '#157A3D',
@@ -49,6 +57,10 @@ export const darkPalette: AppPalette = {
   primaryText: '#090A0D',
   accent: '#6EA8FE',
   accentSoft: '#162238',
+  heroBg: '#1D4ED8',
+  heroBorder: '#3B82F6',
+  heroText: '#FFFFFF',
+  heroSubtext: '#DBEAFE',
   border: '#272B36',
   borderSubtle: '#1D202A',
   success: '#4ADE80',
