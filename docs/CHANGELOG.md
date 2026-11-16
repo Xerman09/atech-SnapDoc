@@ -3,6 +3,9 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 15, 2026
+### Added (Feature Roadmap Documentation)
+- Created `docs/FEATURE_ROADMAP.md` listing planned offline-first capture, scan-output enhancement, and PDF/organization features.
+
 ### Improved (Premium UI Upgrade)
 - Added `heroBg`, `heroBorder`, `heroText`, and `heroSubtext` theme tokens in `src/theme/colors.ts` for both Light Mode and Dark Mode with WCAG AA contrast.
 - Redesigned the Home screen in `App.tsx` with a full-width cobalt **Scan Document** hero card, a 3-column **Import / Enhance / Export** quick-action bar, elevated document cards with page-count pills, and a floating **Scan** action button.
