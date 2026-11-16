@@ -3,6 +3,12 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 16, 2026
+### Release v1.0.10 — Sequential Batch Crop Queue, Reusable Signature & Undo Brush
+- Upgraded `App.tsx` and `src/screens/CropAndEnhanceScreen.tsx` with a sequential **Batch Crop Queue** (`queueLabel` e.g. `1/3`, `2/3`) so every page captured in Batch mode or Multi-Import goes through auto-crop and enhancement in order.
+- Added persistent offline signature storage (`getSavedSignature` / `setSavedSignature` in `src/services/storage/securePrefs.ts`) so `src/components/SignatureModal.tsx` preloads your saved signature across pages and documents.
+- Added an **Undo** button in `src/screens/CropAndEnhanceScreen.tsx` to undo the last interactive paper eraser brush stroke.
+- Updated `docs/FEATURE_ROADMAP.md` and bumped app version to `1.0.10` (`android.versionCode: 10`).
+
 ### Release v1.0.9 — Freehand Signature Pad, Interactive Brush Eraser & Docs Sync
 - Added `src/components/SignatureModal.tsx` (**Sign** modal) with a finger-drawing SVG canvas, plus `signatureStrokes` offline rasterization in `src/services/filters/scanFilters.ts`.
 - Added **Interactive Paper Eraser Brush (`Brush`)** in `src/screens/CropAndEnhanceScreen.tsx` and `eraserStrokes` rasterization in `src/services/filters/scanFilters.ts` so users can manually paint out marks or fingers on any page.

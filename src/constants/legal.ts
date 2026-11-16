@@ -16,7 +16,7 @@ export const BUSINESS_INFO = {
   appName: 'SnapDoc',
   developerName: 'Atech System',
   supportEmail: 'support@atechsystem.local',
-  appVersion: '1.0.9',
+  appVersion: '1.0.10',
   releaseDateMs: Date.UTC(2026, 10, 15, 0, 25, 0),
 };
 

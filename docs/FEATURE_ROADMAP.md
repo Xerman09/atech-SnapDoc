@@ -38,9 +38,9 @@ All features are built **100% offline and local-only** on-device, with zero clou
 
 ## Need to Do
 
-### On-Device Verification (`v1.0.9`)
-- [ ] Confirm GitHub Actions builds and publishes `snapdoc-1.0.9.apk`
-- [ ] Install `v1.0.9` via the in-app update prompt on your Android phone
+### On-Device Verification (`v1.0.10`)
+- [ ] Confirm GitHub Actions builds and publishes `snapdoc-1.0.10.apk`
+- [ ] Install `v1.0.10` via the in-app update prompt on your Android phone
 - [ ] Test **Single**, **Batch**, **ID Card** (Front + Back → A4), **Grid**, **Timer (`3s`)**, and **Tap-to-Focus** on device
 - [ ] Test **Auto-Crop + Corner Loupe**, **Upright**, **Split 2P**, **Decurl**, **Clean Bleed**, **Clean Edges**, **Stamp**, **Sign**, **Brush**, and all scan presets on device
 - [ ] Test **Folders** filtering and **Save PDF to Device** (Downloads folder) on device

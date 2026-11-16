@@ -32,6 +32,7 @@ import {
 
 interface CropAndEnhanceScreenProps {
   initialUri: string;
+  queueLabel?: string;
   onSave: (result: {
     originalUri: string;
     processedUri: string;
@@ -87,6 +88,7 @@ function clamp01(v: number): number {
 
 export function CropAndEnhanceScreen({
   initialUri,
+  queueLabel,
   onSave,
   onSaveMultiple,
   onCancel,
@@ -296,7 +298,11 @@ export function CropAndEnhanceScreen({
           <Text style={[styles.headerBtnText, { color: colors.textSecondary }]}>Cancel</Text>
         </Pressable>
         <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
-          {step === 'crop' ? 'Adjust Corners' : 'Enhance Scan'}
+          {queueLabel
+            ? `${step === 'crop' ? 'Crop' : 'Enhance'} (${queueLabel})`
+            : step === 'crop'
+              ? 'Adjust Corners'
+              : 'Enhance Scan'}
         </Text>
         <Pressable
           onPress={() => {
@@ -833,6 +839,25 @@ export function CropAndEnhanceScreen({
                 {eraserMode ? 'Brush: On' : 'Brush'}
               </Text>
             </Pressable>
+            {adjustments.eraserStrokes && adjustments.eraserStrokes.length > 0 ? (
+              <Pressable
+                onPress={() => {
+                  const next = {
+                    ...adjustments,
+                    eraserStrokes: (adjustments.eraserStrokes ?? []).slice(0, -1),
+                  };
+                  setAdjustments(next);
+                  runProcessing(filter, next);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Undo last brush stroke"
+                style={[styles.reCropBtn, styles.footerHalfBtn, { borderColor: colors.border }]}
+              >
+                <Text style={[styles.reCropText, { color: colors.textSecondary }]}>
+                  Undo
+                </Text>
+              </Pressable>
+            ) : null}
             <Pressable
               onPress={() => {
                 setEraserMode(false);

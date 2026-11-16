@@ -1,9 +1,10 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import { ThemeMode } from '../../types/scanner';
+import { NormalizedStroke, ThemeMode } from '../../types/scanner';
 
 const KEY_CONSENTED = 'snapdoc_user_consented';
 const KEY_THEME_MODE = 'snapdoc_theme_mode';
+const KEY_SAVED_SIGNATURE = 'snapdoc_saved_signature';
 
 function webStorageGet(key: string): string | null {
   try {
@@ -80,15 +81,48 @@ export async function setStoredThemeMode(mode: ThemeMode): Promise<void> {
   }
 }
 
+export async function getSavedSignature(): Promise<NormalizedStroke[]> {
+  try {
+    const raw =
+      Platform.OS === 'web'
+        ? webStorageGet(KEY_SAVED_SIGNATURE)
+        : await SecureStore.getItemAsync(KEY_SAVED_SIGNATURE);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as NormalizedStroke[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function setSavedSignature(strokes: NormalizedStroke[]): Promise<void> {
+  const payload = strokes.length > 0 ? JSON.stringify(strokes) : null;
+  if (Platform.OS === 'web') {
+    webStorageSet(KEY_SAVED_SIGNATURE, payload);
+    return;
+  }
+  try {
+    if (payload) {
+      await SecureStore.setItemAsync(KEY_SAVED_SIGNATURE, payload);
+    } else {
+      await SecureStore.deleteItemAsync(KEY_SAVED_SIGNATURE);
+    }
+  } catch {
+    // Ignore if unavailable
+  }
+}
+
 export async function clearSecurePrefs(): Promise<void> {
   if (Platform.OS === 'web') {
     webStorageSet(KEY_CONSENTED, null);
     webStorageSet(KEY_THEME_MODE, null);
+    webStorageSet(KEY_SAVED_SIGNATURE, null);
     return;
   }
   try {
     await SecureStore.deleteItemAsync(KEY_CONSENTED);
     await SecureStore.deleteItemAsync(KEY_THEME_MODE);
+    await SecureStore.deleteItemAsync(KEY_SAVED_SIGNATURE);
   } catch {
     // Best-effort cleanup
   }

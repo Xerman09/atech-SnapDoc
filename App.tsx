@@ -82,6 +82,8 @@ function MainApp() {
   const [activePages, setActivePages] = useState<ScannedPage[]>([]);
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
   const [pendingUri, setPendingUri] = useState<string | null>(null);
+  const [pendingQueue, setPendingQueue] = useState<string[]>([]);
+  const [queueTotal, setQueueTotal] = useState(1);
   const [availableUpdate, setAvailableUpdate] = useState<UpdateManifest | null>(null);
 
   const refreshDocuments = useCallback(async () => {
@@ -158,6 +160,8 @@ function MainApp() {
 
     setEditingPageId(null);
     setPendingUri(assets[0].uri);
+    setPendingQueue(assets.slice(1).map((a) => a.uri));
+    setQueueTotal(assets.length);
     setRoute('edit');
   };
 
@@ -265,11 +269,33 @@ function MainApp() {
   }
 
   if (route === 'edit' && pendingUri && activeDoc) {
+    const queueLabel =
+      queueTotal > 1
+        ? `${queueTotal - pendingQueue.length}/${queueTotal}`
+        : undefined;
+    const advanceOrFinish = async () => {
+      if (pendingQueue.length > 0) {
+        const [nextUri, ...rest] = pendingQueue;
+        setPendingQueue(rest);
+        setPendingUri(nextUri);
+        setEditingPageId(null);
+        await refreshDocuments();
+      } else {
+        setPendingUri(null);
+        setPendingQueue([]);
+        setQueueTotal(1);
+        setEditingPageId(null);
+        await refreshDocuments();
+        setRoute('document');
+      }
+    };
     return (
       <>
         <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
         <CropAndEnhanceScreen
+          key={pendingUri}
           initialUri={pendingUri}
+          queueLabel={queueLabel}
           onSave={async (edited) => {
             if (editingPageId) {
               await updatePage({
@@ -291,10 +317,7 @@ function MainApp() {
                 adjustments: edited.adjustments,
               });
             }
-            setPendingUri(null);
-            setEditingPageId(null);
-            await refreshDocuments();
-            setRoute('document');
+            await advanceOrFinish();
           }}
           onSaveMultiple={async (results) => {
             for (const edited of results) {
@@ -307,13 +330,12 @@ function MainApp() {
                 adjustments: edited.adjustments,
               });
             }
-            setPendingUri(null);
-            setEditingPageId(null);
-            await refreshDocuments();
-            setRoute('document');
+            await advanceOrFinish();
           }}
           onCancel={async () => {
             setPendingUri(null);
+            setPendingQueue([]);
+            setQueueTotal(1);
             setEditingPageId(null);
             await refreshDocuments();
             setRoute(activeDoc ? 'document' : 'home');

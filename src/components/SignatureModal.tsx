@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   LayoutChangeEvent,
   Modal,
@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import Svg, { Polyline } from 'react-native-svg';
+import { getSavedSignature, setSavedSignature } from '../services/storage/securePrefs';
 import { useTheme } from '../theme/ThemeContext';
 import { NormalizedStroke } from '../types/scanner';
 
@@ -34,6 +35,17 @@ export function SignatureModal({
   const [padSize, setPadSize] = useState({ width: 300, height: 150 });
   const padSizeRef = useRef(padSize);
   padSizeRef.current = padSize;
+
+  useEffect(() => {
+    if (!visible) return;
+    if (initialStrokes.length > 0) {
+      setStrokes(initialStrokes);
+      return;
+    }
+    getSavedSignature().then((saved) => {
+      if (saved.length > 0) setStrokes(saved);
+    });
+  }, [visible]);
 
   const responder = useMemo(
     () =>
@@ -123,7 +135,12 @@ export function SignatureModal({
               <Text style={[styles.btnText, { color: colors.textPrimary }]}>Cancel</Text>
             </Pressable>
             <Pressable
-              onPress={() => onApply(strokes)}
+              onPress={() => {
+                if (strokes.length > 0) {
+                  setSavedSignature(strokes);
+                }
+                onApply(strokes);
+              }}
               accessibilityRole="button"
               accessibilityLabel="Apply signature to document"
               style={[styles.btn, { backgroundColor: colors.accent, borderColor: colors.accent }]}
