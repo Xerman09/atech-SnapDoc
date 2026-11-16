@@ -27,6 +27,7 @@ interface DocumentDetailScreenProps {
   onAddPageCamera: () => void;
   onAddPageGallery: () => void;
   onEditPage: (page: ScannedPage) => void;
+  onDuplicatePage: (page: ScannedPage) => void;
   onMovePage: (pageId: string, direction: 'up' | 'down') => void;
   onDeletePage: (pageId: string) => void;
   onDeleteDocument: () => void;
@@ -54,6 +55,7 @@ export function DocumentDetailScreen({
   onAddPageCamera,
   onAddPageGallery,
   onEditPage,
+  onDuplicatePage,
   onMovePage,
   onDeletePage,
   onDeleteDocument,
@@ -273,6 +275,14 @@ export function DocumentDetailScreen({
                     style={[styles.miniBtn, { borderColor: colors.border, backgroundColor: colors.background }]}
                   >
                     <Text style={[styles.miniBtnText, { color: colors.accent }]}>Crop & Filter</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => onDuplicatePage(item)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Duplicate page ${index + 1}`}
+                    style={[styles.miniIconBtn, { borderColor: colors.border }]}
+                  >
+                    <Ionicons name="copy-outline" size={13} color={colors.textPrimary} />
                   </Pressable>
                   <Pressable
                     onPress={() => onMovePage(item.id, 'up')}

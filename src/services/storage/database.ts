@@ -290,6 +290,23 @@ export async function mergeDocuments(
   return allDocs.find((d) => d.id === merged.id) ?? merged;
 }
 
+/**
+ * Duplicates a scanned page within the same document so edits can be tried non-destructively.
+ */
+export async function duplicatePage(
+  documentId: string,
+  page: ScannedPage
+): Promise<ScannedPage> {
+  return addPageToDocument({
+    documentId,
+    originalUri: page.originalUri,
+    processedUri: page.processedUri,
+    cropQuad: page.cropQuad,
+    filter: page.filter,
+    adjustments: page.adjustments,
+  });
+}
+
 export async function listPagesByDocument(documentId: string): Promise<ScannedPage[]> {
   if (Platform.OS === 'web') return webListPages(documentId);
   const db = await getDb();

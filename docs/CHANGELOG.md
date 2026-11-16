@@ -3,6 +3,12 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 17, 2026
+### Release v1.0.14 — Library Sorting, Duplicate Page & Local Vault Stats
+- Added **Sort** order toggle (`Newest`, `Oldest`, `A–Z`, `Pages`) in the Recent Documents header in `App.tsx`.
+- Added `duplicatePage` in `src/services/storage/database.ts` and a **Duplicate Page** icon button on page cards in `src/screens/DocumentDetailScreen.tsx`.
+- Added **Local Vault** document & page count summary in `src/screens/SettingsScreen.tsx`.
+- Bumped app version to `1.0.14` (`android.versionCode: 14`).
+
 ### Release v1.0.13 — Multi-Document Merge, Bulk Delete & Lightbox Single-Page Share
 - Added `mergeDocuments` in `src/services/storage/database.ts` and multi-select **Select / Merge / Delete** workflow on the Home library in `App.tsx`.
 - Added **Share** button inside the full-screen Page Lightbox in `src/screens/DocumentDetailScreen.tsx` to share any individual page directly.

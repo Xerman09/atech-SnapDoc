@@ -19,6 +19,8 @@ interface SettingsScreenProps {
   onOpenLegal: (docId: LegalDocId) => void;
   onCheckForUpdates: () => void;
   onDeleteAllData: () => void;
+  docCount?: number;
+  totalPages?: number;
 }
 
 const LEGAL_ROWS: { id: LegalDocId; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
@@ -34,6 +36,8 @@ export function SettingsScreen({
   onOpenLegal,
   onCheckForUpdates,
   onDeleteAllData,
+  docCount = 0,
+  totalPages = 0,
 }: SettingsScreenProps) {
   const { colors, mode, setMode } = useTheme();
   const releaseDateText = formatShortDate(BUSINESS_INFO.releaseDateMs);
@@ -155,6 +159,15 @@ export function SettingsScreen({
 
         <Text style={[styles.groupLabel, { color: colors.textMuted }]}>DATA PRIVACY</Text>
         <View style={[styles.groupedCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={[styles.rowBtn, { borderBottomWidth: 1, borderBottomColor: colors.borderSubtle }]}>
+            <View style={styles.rowLeft}>
+              <Ionicons name="folder-outline" size={17} color={colors.textSecondary} />
+              <Text style={[styles.rowText, { color: colors.textPrimary }]}>
+                Local Vault: {docCount} {docCount === 1 ? 'document' : 'documents'} • {totalPages}{' '}
+                {totalPages === 1 ? 'page' : 'pages'}
+              </Text>
+            </View>
+          </View>
           <Pressable
             onPress={confirmDeleteAll}
             accessibilityRole="button"

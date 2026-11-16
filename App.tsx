@@ -36,6 +36,7 @@ import {
   createDocument,
   deleteDocument,
   deletePage,
+  duplicatePage,
   listDocuments,
   listPagesByDocument,
   mergeDocuments,
@@ -81,6 +82,7 @@ function MainApp() {
   const [documents, setDocuments] = useState<ScanDocument[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<'All' | DocumentFolder>('All');
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'az' | 'pages'>('newest');
   const [selectMode, setSelectMode] = useState(false);
   const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
   const [activeDoc, setActiveDoc] = useState<ScanDocument | null>(null);
@@ -161,13 +163,19 @@ function MainApp() {
 
   const filteredDocuments = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return documents.filter((d) => {
+    const filtered = documents.filter((d) => {
       const folderOk =
         selectedFolder === 'All' || (d.folder ?? 'General') === selectedFolder;
       const queryOk = !q || d.title.toLowerCase().includes(q);
       return folderOk && queryOk;
     });
-  }, [documents, searchQuery, selectedFolder]);
+    return [...filtered].sort((a, b) => {
+      if (sortOrder === 'oldest') return a.updatedAt - b.updatedAt;
+      if (sortOrder === 'az') return a.title.localeCompare(b.title);
+      if (sortOrder === 'pages') return b.pageCount - a.pageCount;
+      return b.updatedAt - a.updatedAt;
+    });
+  }, [documents, searchQuery, selectedFolder, sortOrder]);
 
   const openLegal = (docId: LegalDocId, returnTo: 'onboarding' | 'settings') => {
     setActiveLegalDoc(docId);
@@ -429,6 +437,10 @@ function MainApp() {
             setPendingUri(page.originalUri);
             setRoute('edit');
           }}
+          onDuplicatePage={async (page) => {
+            await duplicatePage(activeDoc.id, page);
+            await refreshDocuments();
+          }}
           onMovePage={async (pageId, direction) => {
             await movePageOrder(activeDoc.id, pageId, direction);
             await refreshDocuments();
@@ -456,6 +468,8 @@ function MainApp() {
       <>
         <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
         <SettingsScreen
+          docCount={documents.length}
+          totalPages={documents.reduce((sum, d) => sum + d.pageCount, 0)}
           onBack={() => setRoute('home')}
           onOpenLegal={(docId) => openLegal(docId, 'settings')}
           onCheckForUpdates={async () => {
@@ -689,6 +703,35 @@ function MainApp() {
             RECENT DOCUMENTS
           </Text>
           <View style={styles.sectionHeaderRight}>
+            <Pressable
+              onPress={() =>
+                setSortOrder((prev) =>
+                  prev === 'newest'
+                    ? 'oldest'
+                    : prev === 'oldest'
+                      ? 'az'
+                      : prev === 'az'
+                        ? 'pages'
+                        : 'newest'
+                )
+              }
+              accessibilityRole="button"
+              accessibilityLabel="Cycle document sort order"
+              style={[
+                styles.selectToggleBtn,
+                { borderColor: colors.border, backgroundColor: colors.surface },
+              ]}
+            >
+              <Text style={[styles.selectToggleText, { color: colors.textSecondary }]}>
+                {sortOrder === 'newest'
+                  ? 'Newest'
+                  : sortOrder === 'oldest'
+                    ? 'Oldest'
+                    : sortOrder === 'az'
+                      ? 'A–Z'
+                      : 'Pages'}
+              </Text>
+            </Pressable>
             {documents.length >= 2 || selectMode ? (
               <Pressable
                 onPress={() => {
