@@ -1,4 +1,59 @@
-import { AdjustmentSettings, FilterPreset, StampPreset } from '../../types/scanner';
+import {
+  AdjustmentSettings,
+  FilterPreset,
+  NormalizedStroke,
+  StampPreset,
+} from '../../types/scanner';
+
+function drawNormalizedStrokes(
+  out: Uint8Array,
+  width: number,
+  height: number,
+  strokes: NormalizedStroke[],
+  rgb: [number, number, number],
+  radius: number,
+  region: { x0: number; y0: number; w: number; h: number }
+): void {
+  const r2 = radius * radius;
+  const paintDisc = (cx: number, cy: number) => {
+    const minX = Math.max(0, Math.floor(cx - radius));
+    const maxX = Math.min(width - 1, Math.ceil(cx + radius));
+    const minY = Math.max(0, Math.floor(cy - radius));
+    const maxY = Math.min(height - 1, Math.ceil(cy + radius));
+    for (let y = minY; y <= maxY; y++) {
+      for (let x = minX; x <= maxX; x++) {
+        const dx = x - cx;
+        const dy = y - cy;
+        if (dx * dx + dy * dy <= r2) {
+          const idx = (y * width + x) * 4;
+          out[idx] = rgb[0];
+          out[idx + 1] = rgb[1];
+          out[idx + 2] = rgb[2];
+        }
+      }
+    }
+  };
+
+  for (const stroke of strokes) {
+    if (stroke.length === 0) continue;
+    for (let i = 0; i < stroke.length; i++) {
+      const p1x = region.x0 + stroke[i].x * region.w;
+      const p1y = region.y0 + stroke[i].y * region.h;
+      if (i === 0) {
+        paintDisc(p1x, p1y);
+        continue;
+      }
+      const p0x = region.x0 + stroke[i - 1].x * region.w;
+      const p0y = region.y0 + stroke[i - 1].y * region.h;
+      const dist = Math.hypot(p1x - p0x, p1y - p0y);
+      const steps = Math.max(1, Math.ceil(dist / Math.max(1, radius * 0.45)));
+      for (let s = 1; s <= steps; s++) {
+        const t = s / steps;
+        paintDisc(p0x + (p1x - p0x) * t, p0y + (p1y - p0y) * t);
+      }
+    }
+  }
+}
 
 const STAMP_FONT_5X7: Record<string, string[]> = {
   A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
@@ -448,8 +503,40 @@ export function applyScanFilterToRgba(
     }
   }
 
+  if (adjustments.eraserStrokes && adjustments.eraserStrokes.length > 0) {
+    const brushRadius = Math.max(6, Math.round(Math.min(width, height) * 0.02));
+    drawNormalizedStrokes(
+      out,
+      width,
+      height,
+      adjustments.eraserStrokes,
+      [255, 255, 255],
+      brushRadius,
+      { x0: 0, y0: 0, w: width, h: height }
+    );
+  }
+
   if (adjustments.stamp && adjustments.stamp !== 'none') {
     drawRubberStamp(out, width, height, adjustments.stamp);
+  }
+
+  if (adjustments.signatureStrokes && adjustments.signatureStrokes.length > 0) {
+    const sigW = Math.round(width * 0.34);
+    const sigH = Math.round(sigW * 0.45);
+    const margin = Math.max(12, Math.round(Math.min(width, height) * 0.04));
+    const hasStamp = adjustments.stamp && adjustments.stamp !== 'none';
+    const x0 = hasStamp ? margin : Math.max(4, width - margin - sigW);
+    const y0 = Math.max(4, height - margin - sigH);
+    const penRadius = Math.max(1.5, Math.min(width, height) * 0.0032);
+    drawNormalizedStrokes(
+      out,
+      width,
+      height,
+      adjustments.signatureStrokes,
+      [15, 23, 42],
+      penRadius,
+      { x0, y0, w: sigW, h: sigH }
+    );
   }
 
   return out;

@@ -232,4 +232,40 @@ describe('CV geometry and scan filter engine', () => {
     expect(dst.length).toBe(w * h * 4);
     expect(dst[0]).toBe(240);
   });
+
+  it('applies interactive eraser strokes and handwritten signature strokes', () => {
+    const w = 120;
+    const h = 120;
+    const rgba = new Uint8Array(w * h * 4).fill(250);
+    // Dark smudge at center (60, 60)
+    const smudgeIdx = (60 * w + 60) * 4;
+    rgba[smudgeIdx] = 20;
+    rgba[smudgeIdx + 1] = 20;
+    rgba[smudgeIdx + 2] = 20;
+
+    const out = applyScanFilterToRgba(rgba, w, h, 'original', {
+      brightness: 0,
+      contrast: 0,
+      sharpness: 0,
+      eraserStrokes: [[{ x: 0.5, y: 0.5 }]],
+      signatureStrokes: [[{ x: 0.1, y: 0.5 }, { x: 0.9, y: 0.5 }]],
+    });
+
+    // Center smudge was painted white by eraser brush
+    expect(out[smudgeIdx]).toBe(255);
+
+    // Bottom-right signature box has dark ink pixels
+    let hasDarkSignature = false;
+    for (let y = h - 30; y < h; y++) {
+      for (let x = w - 50; x < w; x++) {
+        const idx = (y * w + x) * 4;
+        if (out[idx] < 40 && out[idx + 1] < 40) {
+          hasDarkSignature = true;
+          break;
+        }
+      }
+      if (hasDarkSignature) break;
+    }
+    expect(hasDarkSignature).toBe(true);
+  });
 });

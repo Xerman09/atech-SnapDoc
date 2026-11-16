@@ -1,7 +1,7 @@
 # SnapDoc — System Documentation
 
 > **App Type:** 100% Local-Only, Offline React Native Document Scanner (Expo SDK + TypeScript + Hermes, with Web preview fallbacks)  
-> **Last Updated:** Nov 15, 2026
+> **Last Updated:** Nov 16, 2026
 
 ---
 
@@ -34,7 +34,8 @@ SnapDoc runs completely offline on the user's device. Document capture, edge det
 | Multi-Page Workspace & Encrypted Local DB | Completed | Phase 5 | Parameterized `expo-sqlite` + `expo-secure-store`, multi-page reorder/rename/delete |
 | Image (PNG/JPEG) & PDF Export | Completed | Phase 6 | Offline `pdf-lib` multi-page PDF (A4/Letter/Fit, margins, quality) + Gallery/File image export |
 | In-App Auto-Update & Compressed APK | Completed | Phase 7 | HTTPS manifest check, SHA-256 verification, in-app Android installer, ProGuard/R8 + Hermes + ABI splits |
-| Security Audit, Unit Tests & Verification | Completed | Phase 8 | `vitest` (11/11 tests passing), `tsc --noEmit` passing, `npm audit --audit-level=high` (0 high/critical) |
+| Security Audit, Unit Tests & Verification | Completed | Phase 8 | `vitest` (18/18 tests passing), `tsc --noEmit` passing, `npm audit --audit-level=high` (0 high/critical) |
+| CamScanner Precision & Offline Enhancements | Completed | `v1.0.4–v1.0.9` | 4-side Hough auto-crop, 2.4× Corner Loupe, Batch & ID Card A4 modes, Spread Split, `Receipt`/`Whiteboard`/`Eco Print` presets, `Whiten`, `Clean Bleed`, `Clean Edges`, `Decurl`, `Stamp`, Freehand Signature Pad, Paper Eraser Brush, SQLite Folders, SAF local PDF download |
 
 ---
 

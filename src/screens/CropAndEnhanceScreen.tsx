@@ -12,7 +12,8 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Svg, { Polygon } from 'react-native-svg';
+import Svg, { Polygon, Polyline } from 'react-native-svg';
+import { SignatureModal } from '../components/SignatureModal';
 import {
   autoDetectNormalizedQuad,
   autoOrientImageIfNeeded,
@@ -71,6 +72,8 @@ const DEFAULT_ADJUSTMENTS: AdjustmentSettings = {
   cleanMargins: false,
   decurl: false,
   stamp: 'none',
+  signatureStrokes: [],
+  eraserStrokes: [],
 };
 
 const STAMP_CYCLE: StampPreset[] = ['none', 'PAID', 'APPROVED', 'CONFIDENTIAL'];
@@ -97,6 +100,9 @@ export function CropAndEnhanceScreen({
   const [adjustments, setAdjustments] = useState<AdjustmentSettings>(DEFAULT_ADJUSTMENTS);
   const [busy, setBusy] = useState(false);
   const [activeCorner, setActiveCorner] = useState<CornerKey | null>(null);
+  const [eraserMode, setEraserMode] = useState(false);
+  const [liveEraserStroke, setLiveEraserStroke] = useState<{ x: number; y: number }[]>([]);
+  const [signatureOpen, setSignatureOpen] = useState(false);
   const [boxSize, setBoxSize] = useState({ width: 300, height: 400 });
   const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
 
@@ -189,6 +195,45 @@ export function CropAndEnhanceScreen({
       bottomRight: makeCornerResponder('bottomRight'),
       bottomLeft: makeCornerResponder('bottomLeft'),
     }),
+    []
+  );
+
+  const adjustmentsRef = useRef(adjustments);
+  adjustmentsRef.current = adjustments;
+  const filterRef = useRef(filter);
+  filterRef.current = filter;
+
+  const eraserResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: (e) => {
+          const { locationX, locationY } = e.nativeEvent;
+          const nx = clamp01(locationX / Math.max(1, imgRectRef.current.width));
+          const ny = clamp01(locationY / Math.max(1, imgRectRef.current.height));
+          setLiveEraserStroke([{ x: nx, y: ny }]);
+        },
+        onPanResponderMove: (e) => {
+          const { locationX, locationY } = e.nativeEvent;
+          const nx = clamp01(locationX / Math.max(1, imgRectRef.current.width));
+          const ny = clamp01(locationY / Math.max(1, imgRectRef.current.height));
+          setLiveEraserStroke((prev) => [...prev, { x: nx, y: ny }]);
+        },
+        onPanResponderRelease: () => {
+          setLiveEraserStroke((stroke) => {
+            if (stroke.length > 0) {
+              const nextAdj = {
+                ...adjustmentsRef.current,
+                eraserStrokes: [...(adjustmentsRef.current.eraserStrokes ?? []), stroke],
+              };
+              setAdjustments(nextAdj);
+              runProcessing(filterRef.current, nextAdj);
+            }
+            return [];
+          });
+        },
+      }),
     []
   );
 
@@ -331,6 +376,34 @@ export function CropAndEnhanceScreen({
                 );
               }
             )}
+          </View>
+        ) : null}
+
+        {step === 'enhance' && eraserMode ? (
+          <View
+            {...eraserResponder.panHandlers}
+            style={{
+              position: 'absolute',
+              left: imgRect.left,
+              top: imgRect.top,
+              width: imgRect.width,
+              height: imgRect.height,
+            }}
+          >
+            <Svg width={imgRect.width} height={imgRect.height}>
+              {liveEraserStroke.length > 0 ? (
+                <Polyline
+                  points={liveEraserStroke
+                    .map((p) => `${p.x * imgRect.width},${p.y * imgRect.height}`)
+                    .join(' ')}
+                  fill="none"
+                  stroke="#FFFFFF"
+                  strokeWidth={18}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ) : null}
+            </Svg>
           </View>
         ) : null}
 
@@ -705,7 +778,66 @@ export function CropAndEnhanceScreen({
               </Text>
             </Pressable>
             <Pressable
-              onPress={() => setStep('crop')}
+              onPress={() => setSignatureOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Draw handwritten signature"
+              style={[
+                styles.reCropBtn,
+                styles.footerHalfBtn,
+                {
+                  borderColor:
+                    adjustments.signatureStrokes && adjustments.signatureStrokes.length > 0
+                      ? colors.accent
+                      : colors.border,
+                  backgroundColor:
+                    adjustments.signatureStrokes && adjustments.signatureStrokes.length > 0
+                      ? colors.accentSoft
+                      : 'transparent',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.reCropText,
+                  {
+                    color:
+                      adjustments.signatureStrokes && adjustments.signatureStrokes.length > 0
+                        ? colors.accent
+                        : colors.textPrimary,
+                  },
+                ]}
+              >
+                Sign
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setEraserMode((prev) => !prev)}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: eraserMode }}
+              accessibilityLabel="Toggle interactive paper eraser brush"
+              style={[
+                styles.reCropBtn,
+                styles.footerHalfBtn,
+                {
+                  borderColor: eraserMode ? colors.accent : colors.border,
+                  backgroundColor: eraserMode ? colors.accentSoft : 'transparent',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.reCropText,
+                  { color: eraserMode ? colors.accent : colors.textPrimary },
+                ]}
+              >
+                {eraserMode ? 'Brush: On' : 'Brush'}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                setEraserMode(false);
+                setStep('crop');
+              }}
               accessibilityRole="button"
               accessibilityLabel="Return to crop corner editor"
               style={[styles.reCropBtn, styles.footerHalfBtn, { borderColor: colors.border }]}
@@ -717,6 +849,18 @@ export function CropAndEnhanceScreen({
           </View>
         </View>
       )}
+
+      <SignatureModal
+        visible={signatureOpen}
+        initialStrokes={adjustments.signatureStrokes ?? []}
+        onClose={() => setSignatureOpen(false)}
+        onApply={(strokes) => {
+          setSignatureOpen(false);
+          const next = { ...adjustments, signatureStrokes: strokes };
+          setAdjustments(next);
+          runProcessing(filter, next);
+        }}
+      />
     </SafeAreaView>
   );
 }

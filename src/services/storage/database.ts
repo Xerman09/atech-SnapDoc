@@ -44,6 +44,13 @@ const FilterSchema = z.enum([
 
 const FolderSchema = z.enum(['General', 'Receipts', 'IDs', 'Work', 'School']);
 
+const StrokeSchema = z.array(
+  z.object({
+    x: z.number().min(0).max(1),
+    y: z.number().min(0).max(1),
+  })
+);
+
 const AdjustmentsSchema = z.object({
   brightness: z.number().min(-100).max(100),
   contrast: z.number().min(-100).max(100),
@@ -53,6 +60,8 @@ const AdjustmentsSchema = z.object({
   cleanMargins: z.boolean().optional(),
   decurl: z.boolean().optional(),
   stamp: z.enum(['none', 'PAID', 'APPROVED', 'CONFIDENTIAL']).optional(),
+  signatureStrokes: z.array(StrokeSchema).optional(),
+  eraserStrokes: z.array(StrokeSchema).optional(),
 });
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;

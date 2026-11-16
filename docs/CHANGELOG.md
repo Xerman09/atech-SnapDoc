@@ -3,6 +3,11 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 16, 2026
+### Release v1.0.9 — Freehand Signature Pad, Interactive Brush Eraser & Docs Sync
+- Added `src/components/SignatureModal.tsx` (**Sign** modal) with a finger-drawing SVG canvas, plus `signatureStrokes` offline rasterization in `src/services/filters/scanFilters.ts`.
+- Added **Interactive Paper Eraser Brush (`Brush`)** in `src/screens/CropAndEnhanceScreen.tsx` and `eraserStrokes` rasterization in `src/services/filters/scanFilters.ts` so users can manually paint out marks or fingers on any page.
+- Updated `StrokeSchema` in `src/services/storage/database.ts`, synced `docs/SYSTEM_DOCS.md` and `docs/FEATURE_ROADMAP.md`, added unit tests in `src/__tests__/cvAndFilters.test.ts`, and bumped app version to `1.0.9` (`android.versionCode: 9`).
+
 ### Updated (Checklist Structure)
 - Reorganized `docs/FEATURE_ROADMAP.md` into separate **Done** and **Need to Do** sections (on-device `v1.0.8` verification and optional future enhancements).
 

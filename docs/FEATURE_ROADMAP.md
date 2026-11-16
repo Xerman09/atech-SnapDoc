@@ -29,7 +29,8 @@ All features are built **100% offline and local-only** on-device, with zero clou
 - [x] **Clean Bleed (`despeckle`):** Suppresses isolated paper specks and faint back-side bleed-through
 - [x] **Clean Edges (`cleanMargins`):** Smoothly whitens dark outer borders and edge shadows
 - [x] **Page-Curl Flattening (`Decurl`):** Sinusoidal vertical-arch compensation for curved notebook/book pages
-- [x] **Status Stamp Overlays:** Bordered `PAID`, `APPROVED`, and `CONFIDENTIAL` stamps rendered offline
+- [x] **Status Stamp Overlays & Freehand Signature Pad:** Draw handwritten signatures (`Sign` modal) or apply bordered `PAID`, `APPROVED`, and `CONFIDENTIAL` stamps offline
+- [x] **Interactive Paper Eraser Brush (`Brush`) & Clean Outer Edges (`Clean Edges`):** Brush out fingers/marks anywhere on a page or auto-whiten dark outer margins
 - [x] **Custom Export File Naming, Quick Date Templates & Live Compression Size Preview**
 - [x] **Folders / Tags Organization:** Local SQLite folders (`General`, `Receipts`, `IDs`, `Work`, `School`) with Home filtering and folder badges
 
@@ -37,15 +38,12 @@ All features are built **100% offline and local-only** on-device, with zero clou
 
 ## Need to Do
 
-### On-Device Verification (`v1.0.8`)
-- [ ] Confirm GitHub Actions builds and publishes `snapdoc-1.0.8.apk`
-- [ ] Install `v1.0.8` via the in-app update prompt on your Android phone
+### On-Device Verification (`v1.0.9`)
+- [ ] Confirm GitHub Actions builds and publishes `snapdoc-1.0.9.apk`
+- [ ] Install `v1.0.9` via the in-app update prompt on your Android phone
 - [ ] Test **Single**, **Batch**, **ID Card** (Front + Back → A4), **Grid**, **Timer (`3s`)**, and **Tap-to-Focus** on device
-- [ ] Test **Auto-Crop + Corner Loupe**, **Upright**, **Split 2P**, **Decurl**, **Clean Bleed**, **Clean Edges**, **Stamp**, and all scan presets on device
+- [ ] Test **Auto-Crop + Corner Loupe**, **Upright**, **Split 2P**, **Decurl**, **Clean Bleed**, **Clean Edges**, **Stamp**, **Sign**, **Brush**, and all scan presets on device
 - [ ] Test **Folders** filtering and **Save PDF to Device** (Downloads folder) on device
 
 ### Optional Future Enhancements
-- [ ] **Freehand Signature Pad:** Draw and save reusable handwritten signatures with your finger
-- [ ] **Interactive Brush Eraser:** Manually brush out fingers/thumbs or marks anywhere on a page
 - [ ] **Real-Time Live Edge Contour Overlay:** Requires migrating from `expo-camera` to `react-native-vision-camera` with a native frame processor
-- [ ] **Sync `docs/SYSTEM_DOCS.md`:** Document the `folder` column migration, `v1.0.4–v1.0.8` CV options, and SAF PDF export flow

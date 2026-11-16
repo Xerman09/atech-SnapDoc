@@ -14,6 +14,8 @@ export interface Point {
   y: number;
 }
 
+export type NormalizedStroke = Point[];
+
 export interface CropQuad {
   topLeft: Point;
   topRight: Point;
@@ -34,6 +36,8 @@ export interface AdjustmentSettings {
   cleanMargins?: boolean; // whiten outer 3% border shadows/fingers
   decurl?: boolean; // flatten mild book/notebook page curvature
   stamp?: StampPreset; // optional rubber-stamp overlay
+  signatureStrokes?: NormalizedStroke[]; // freehand signature strokes
+  eraserStrokes?: NormalizedStroke[]; // interactive white paper brush strokes
 }
 
 export interface ScannedPage {
