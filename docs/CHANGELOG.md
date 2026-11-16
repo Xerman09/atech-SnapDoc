@@ -3,6 +3,11 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 16, 2026
+### Release v1.0.8 — Page-Curl Flattening (Decurl), Tap-to-Focus Reticle & 3s Timer Shutter
+- Added **Page-Curl / Book-Curve Flattening (`Decurl`)** via sinusoidal vertical-arch compensation in `src/services/cv/geometry.ts`, wired through `src/services/cv/imagePipeline.ts`, `src/types/scanner.ts`, `src/services/storage/database.ts`, and `src/screens/CropAndEnhanceScreen.tsx`.
+- Added **Tap-to-Focus Reticle** and a **3s Hands-Free Timer Shutter** (`Timer` / `3s`) with live countdown overlay in `src/screens/CaptureScreen.tsx`.
+- Added unit test for `decurl` warp in `src/__tests__/cvAndFilters.test.ts`, completed all items in `docs/FEATURE_ROADMAP.md`, and bumped app version to `1.0.8` (`android.versionCode: 8`).
+
 ### Release v1.0.7 — Folders/Tags, Clean Outer Edges & Status Stamp Overlays
 - Added **Folders / Tags Organization** (`General`, `Receipts`, `IDs`, `Work`, `School`) with SQLite schema migration (`folder` column + `updateDocumentFolder`) in `src/services/storage/database.ts`, `src/services/storage/webDbFallback.ts`, folder chips in `src/screens/DocumentDetailScreen.tsx`, and Home library filtering + folder badges in `App.tsx`.
 - Added **Clean Edges** (`cleanMargins`) outer-margin whitening and **Status Stamp Overlays** (`PAID`, `APPROVED`, `CONFIDENTIAL`) in `src/services/filters/scanFilters.ts` and `src/screens/CropAndEnhanceScreen.tsx`.

@@ -187,7 +187,8 @@ export async function processScanPage(
     decoded.height,
     pixelQuad,
     targetDims.width,
-    targetDims.height
+    targetDims.height,
+    Boolean(adjustments.decurl)
   );
 
   const filtered = applyScanFilterToRgba(
@@ -221,7 +222,8 @@ export async function splitSpreadPage(
     decoded.height,
     pixelQuad,
     targetDims.width,
-    targetDims.height
+    targetDims.height,
+    Boolean(adjustments.decurl)
   );
 
   const filtered = applyScanFilterToRgba(

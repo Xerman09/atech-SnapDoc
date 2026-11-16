@@ -51,6 +51,7 @@ const AdjustmentsSchema = z.object({
   whitening: z.number().min(0).max(100).optional(),
   despeckle: z.boolean().optional(),
   cleanMargins: z.boolean().optional(),
+  decurl: z.boolean().optional(),
   stamp: z.enum(['none', 'PAID', 'APPROVED', 'CONFIDENTIAL']).optional(),
 });
 

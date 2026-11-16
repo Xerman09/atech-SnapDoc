@@ -32,6 +32,7 @@ export interface AdjustmentSettings {
   whitening?: number; // 0 to 100 (paper background whitening)
   despeckle?: boolean; // suppress paper grain and back-side bleed-through
   cleanMargins?: boolean; // whiten outer 3% border shadows/fingers
+  decurl?: boolean; // flatten mild book/notebook page curvature
   stamp?: StampPreset; // optional rubber-stamp overlay
 }
 

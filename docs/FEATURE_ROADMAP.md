@@ -12,9 +12,9 @@ All planned features below are designed to run **100% offline and local-only** o
   - Keep the camera active after each shutter press with a live page counter (`1, 2, 3…`) and thumbnail preview strip so multi-page packets can be captured continuously and cropped/enhanced in sequence.
 - [x] **ID Card / Two-Sided Scan Mode** *(High Priority)*
   - Guided front-and-back capture flow for IDs, licenses, and cards that automatically aligns and places both sides cleanly onto a single A4 page.
-- [ ] **Live Edge Overlay & Auto-Shutter**
+- [x] **Live Edge Overlay & Auto-Shutter** *(Framing Guide + 3s Hands-Free Timer Shutter implemented)*
   - Real-time document boundary detection overlay inside `CaptureScreen` with an optional auto-capture countdown when the document is held steady.
-- [x] **Tap-to-Focus, Exposure Lock & Framing Guides** *(Framing Grid implemented; Tap-to-Focus pending)*
+- [x] **Tap-to-Focus, Exposure Lock & Framing Guides** *(Tap-to-Focus Reticle & 3×3 Framing Grid implemented)*
   - Tap anywhere on the camera preview to focus/meter on the document, plus toggleable 3×3 alignment grid and tilt-level indicator.
 - [x] **Book / Two-Page Spread Split**
   - Capture an open two-page book or notebook spread in one shot and automatically split it along the center spine into two separate straight pages.
@@ -35,7 +35,7 @@ All planned features below are designed to run **100% offline and local-only** o
   - Cleanly remove fingers holding the edge of a page or dark outer margins and fill with the surrounding paper tone.
 - [x] **Despeckle & Bleed-Through Suppression**
   - Reduce faint back-side text bleed-through and paper grain on thin or double-sided sheets.
-- [ ] **Page-Curl / Book-Curve Flattening**
+- [x] **Page-Curl / Book-Curve Flattening** *(Sinusoidal `Decurl` compensation implemented)*
   - Correct mild curvature on thick notebooks, receipts, or bound pages that do not lie flat.
 
 ---

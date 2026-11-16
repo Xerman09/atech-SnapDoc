@@ -1,7 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  GestureResponderEvent,
   Image,
   Pressable,
   StyleSheet,
@@ -31,9 +32,29 @@ export function CaptureScreen({ onCaptured, onCancel }: CaptureScreenProps) {
   const [torch, setTorch] = useState(false);
   const [scanMode, setScanMode] = useState<'single' | 'batch' | 'id_card'>('single');
   const [showGrid, setShowGrid] = useState(true);
+  const [timerOn, setTimerOn] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [focusPoint, setFocusPoint] = useState<{ x: number; y: number } | null>(null);
   const [batchAssets, setBatchAssets] = useState<CapturedImageAsset[]>([]);
   const [idFrontUri, setIdFrontUri] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!focusPoint) return;
+    const t = setTimeout(() => setFocusPoint(null), 900);
+    return () => clearTimeout(t);
+  }, [focusPoint]);
+
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown <= 0) {
+      setCountdown(null);
+      executeCapture();
+      return;
+    }
+    const t = setTimeout(() => setCountdown((c) => (c !== null ? c - 1 : null)), 1000);
+    return () => clearTimeout(t);
+  }, [countdown]);
 
   const handleGalleryImport = async () => {
     if (busy) return;
@@ -54,7 +75,7 @@ export function CaptureScreen({ onCaptured, onCancel }: CaptureScreenProps) {
     }
   };
 
-  const handleTakePhoto = async () => {
+  const executeCapture = async () => {
     if (!cameraRef.current || busy) return;
     setBusy(true);
     try {
@@ -100,6 +121,20 @@ export function CaptureScreen({ onCaptured, onCancel }: CaptureScreenProps) {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleTakePhoto = () => {
+    if (busy || countdown !== null) return;
+    if (timerOn) {
+      setCountdown(3);
+    } else {
+      executeCapture();
+    }
+  };
+
+  const handleViewfinderTap = (e: GestureResponderEvent) => {
+    const { locationX, locationY } = e.nativeEvent;
+    setFocusPoint({ x: locationX, y: locationY });
   };
 
   if (!permission) {
@@ -203,6 +238,15 @@ export function CaptureScreen({ onCaptured, onCancel }: CaptureScreenProps) {
             </Text>
           </Pressable>
           <Pressable
+            onPress={() => setTimerOn((prev) => !prev)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: timerOn }}
+            accessibilityLabel={timerOn ? 'Disable 3 second timer' : 'Enable 3 second timer'}
+            style={[styles.overlayBtn, timerOn && styles.overlayBtnActive]}
+          >
+            <Text style={styles.overlayBtnText}>{timerOn ? '3s' : 'Timer'}</Text>
+          </Pressable>
+          <Pressable
             onPress={() => setTorch((prev) => !prev)}
             accessibilityRole="button"
             accessibilityState={{ selected: torch }}
@@ -222,13 +266,27 @@ export function CaptureScreen({ onCaptured, onCancel }: CaptureScreenProps) {
         </View>
       </View>
 
-      <View style={styles.viewfinderWrap}>
+      <Pressable style={styles.viewfinderWrap} onPress={handleViewfinderTap}>
         <CameraView
           ref={cameraRef}
           style={styles.camera}
           facing={facing}
           enableTorch={torch}
         />
+        {focusPoint ? (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.focusReticle,
+              { left: focusPoint.x - 24, top: focusPoint.y - 24 },
+            ]}
+          />
+        ) : null}
+        {countdown !== null && countdown > 0 ? (
+          <View style={styles.countdownOverlay} pointerEvents="none">
+            <Text style={styles.countdownText}>{countdown}</Text>
+          </View>
+        ) : null}
         {showGrid ? (
           <View style={styles.gridOverlay} pointerEvents="none">
             <View style={[styles.gridLineV, { left: '33.33%' }]} />
@@ -256,7 +314,7 @@ export function CaptureScreen({ onCaptured, onCancel }: CaptureScreenProps) {
           <View style={[styles.corner, styles.cornerBL]} />
           <View style={[styles.corner, styles.cornerBR]} />
         </View>
-      </View>
+      </Pressable>
 
       <View style={styles.bottomControls}>
         <Pressable
@@ -547,5 +605,28 @@ const styles = StyleSheet.create({
     bottom: '28%',
     left: 20,
     right: 20,
+  },
+  focusReticle: {
+    position: 'absolute',
+    width: 48,
+    height: 48,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#FACC15',
+  },
+  countdownOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+  },
+  countdownText: {
+    color: '#FFFFFF',
+    fontSize: 64,
+    fontWeight: '800',
   },
 });

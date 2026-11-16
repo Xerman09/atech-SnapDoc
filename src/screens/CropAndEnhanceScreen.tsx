@@ -69,6 +69,7 @@ const DEFAULT_ADJUSTMENTS: AdjustmentSettings = {
   whitening: 35,
   despeckle: false,
   cleanMargins: false,
+  decurl: false,
   stamp: 'none',
 };
 
@@ -628,6 +629,36 @@ export function CropAndEnhanceScreen({
                 ]}
               >
                 {adjustments.cleanMargins ? 'Edges: On' : 'Clean Edges'}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                const next = {
+                  ...adjustments,
+                  decurl: !adjustments.decurl,
+                };
+                setAdjustments(next);
+                runProcessing(filter, next);
+              }}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: Boolean(adjustments.decurl) }}
+              accessibilityLabel="Toggle page curl flattening"
+              style={[
+                styles.reCropBtn,
+                styles.footerHalfBtn,
+                {
+                  borderColor: adjustments.decurl ? colors.accent : colors.border,
+                  backgroundColor: adjustments.decurl ? colors.accentSoft : 'transparent',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.reCropText,
+                  { color: adjustments.decurl ? colors.accent : colors.textPrimary },
+                ]}
+              >
+                {adjustments.decurl ? 'Decurl: On' : 'Decurl'}
               </Text>
             </Pressable>
             <Pressable

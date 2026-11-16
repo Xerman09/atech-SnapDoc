@@ -132,16 +132,28 @@ export function warpPerspectiveRgba(
   srcHeight: number,
   quad: CropQuad,
   dstWidth: number,
-  dstHeight: number
+  dstHeight: number,
+  decurl = false
 ): Uint8Array {
   const H = computeInverseHomography(quad, dstWidth, dstHeight);
   const dst = new Uint8Array(dstWidth * dstHeight * 4);
+  const maxU = Math.max(1, dstWidth - 1);
+  const maxV = Math.max(1, dstHeight - 1);
 
   for (let v = 0; v < dstHeight; v++) {
+    const nv = v / maxV;
+    const edgeWeight = 1 - Math.abs(nv - 0.5) * 1.4;
     for (let u = 0; u < dstWidth; u++) {
-      const denom = H[6] * u + H[7] * v + H[8];
-      const sx = (H[0] * u + H[1] * v + H[2]) / denom;
-      const sy = (H[3] * u + H[4] * v + H[5]) / denom;
+      let sampleV = v;
+      if (decurl && edgeWeight > 0) {
+        const nu = u / maxU;
+        // Smooth sinusoidal vertical arch compensation for curved notebook/book pages
+        const arch = Math.sin(Math.PI * nu) * edgeWeight;
+        sampleV = Math.max(0, Math.min(maxV, v - arch * dstHeight * 0.035));
+      }
+      const denom = H[6] * u + H[7] * sampleV + H[8];
+      const sx = (H[0] * u + H[1] * sampleV + H[2]) / denom;
+      const sy = (H[3] * u + H[4] * sampleV + H[5]) / denom;
 
       const x0 = Math.max(0, Math.min(srcWidth - 1, Math.floor(sx)));
       const y0 = Math.max(0, Math.min(srcHeight - 1, Math.floor(sy)));

@@ -210,4 +210,26 @@ describe('CV geometry and scan filter engine', () => {
     }
     expect(hasGreenStamp).toBe(true);
   });
+
+  it('warps with decurl page-curl flattening enabled', () => {
+    const w = 20;
+    const h = 20;
+    const src = new Uint8Array(w * h * 4).fill(240);
+    const dst = warpPerspectiveRgba(
+      src,
+      w,
+      h,
+      {
+        topLeft: { x: 0, y: 0 },
+        topRight: { x: w - 1, y: 0 },
+        bottomRight: { x: w - 1, y: h - 1 },
+        bottomLeft: { x: 0, y: h - 1 },
+      },
+      w,
+      h,
+      true
+    );
+    expect(dst.length).toBe(w * h * 4);
+    expect(dst[0]).toBe(240);
+  });
 });
