@@ -3,6 +3,9 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 16, 2026
+### Updated (Checklist Structure)
+- Reorganized `docs/FEATURE_ROADMAP.md` into separate **Done** and **Need to Do** sections (on-device `v1.0.8` verification and optional future enhancements).
+
 ### Release v1.0.8 — Page-Curl Flattening (Decurl), Tap-to-Focus Reticle & 3s Timer Shutter
 - Added **Page-Curl / Book-Curve Flattening (`Decurl`)** via sinusoidal vertical-arch compensation in `src/services/cv/geometry.ts`, wired through `src/services/cv/imagePipeline.ts`, `src/types/scanner.ts`, `src/services/storage/database.ts`, and `src/screens/CropAndEnhanceScreen.tsx`.
 - Added **Tap-to-Focus Reticle** and a **3s Hands-Free Timer Shutter** (`Timer` / `3s`) with live countdown overlay in `src/screens/CaptureScreen.tsx`.

@@ -1,50 +1,51 @@
-# SnapDoc — Feature Roadmap
+# SnapDoc — Feature & Release Checklist
 
-All planned features below are designed to run **100% offline and local-only** on-device, with zero cloud dependencies, telemetry, or external APIs.
-
----
-
-## 1. Capture & Smart Scanning
-
-- [x] **Corner Magnifier Loupe (Zoom Bubble)** *(High Priority)*
-  - Pop up a zoomed circular magnifier above the user's finger while dragging any of the 4 corner handles in `CropAndEnhanceScreen`, enabling pixel-accurate alignment without the thumb blocking the corner.
-- [x] **Multi-Page Batch Scan Mode** *(High Priority)*
-  - Keep the camera active after each shutter press with a live page counter (`1, 2, 3…`) and thumbnail preview strip so multi-page packets can be captured continuously and cropped/enhanced in sequence.
-- [x] **ID Card / Two-Sided Scan Mode** *(High Priority)*
-  - Guided front-and-back capture flow for IDs, licenses, and cards that automatically aligns and places both sides cleanly onto a single A4 page.
-- [x] **Live Edge Overlay & Auto-Shutter** *(Framing Guide + 3s Hands-Free Timer Shutter implemented)*
-  - Real-time document boundary detection overlay inside `CaptureScreen` with an optional auto-capture countdown when the document is held steady.
-- [x] **Tap-to-Focus, Exposure Lock & Framing Guides** *(Tap-to-Focus Reticle & 3×3 Framing Grid implemented)*
-  - Tap anywhere on the camera preview to focus/meter on the document, plus toggleable 3×3 alignment grid and tilt-level indicator.
-- [x] **Book / Two-Page Spread Split**
-  - Capture an open two-page book or notebook spread in one shot and automatically split it along the center spine into two separate straight pages.
-- [x] **Auto-Orientation Detection**
-  - Automatically detect sideways or upside-down captures and rotate them upright before saving.
+All features are built **100% offline and local-only** on-device, with zero cloud dependencies, telemetry, or external APIs.
 
 ---
 
-## 2. Scanned Output & Document Enhancement
+## Done
 
-- [x] **Paper Whitening & Shadow Removal Slider** *(High Priority)*
-  - Dedicated intensity control to neutralize warm indoor lighting and cast shadows into clean white paper while preserving ink, stamps, and colored highlights.
-- [x] **Specialized Scan Presets** *(Receipt, Whiteboard & Eco Print implemented)*
-  - **Receipt / Thermal:** Boosts faded thermal receipt ink and suppresses paper noise.
-  - **Whiteboard:** Removes glare/reflections and sharpens dry-erase marker strokes.
-  - **Eco / Light Ink:** Clean, ink-saving output optimized for physical printing.
-- [x] **Finger / Thumb & Margin Eraser** *(Clean Edges outer-margin eraser implemented)*
-  - Cleanly remove fingers holding the edge of a page or dark outer margins and fill with the surrounding paper tone.
-- [x] **Despeckle & Bleed-Through Suppression**
-  - Reduce faint back-side text bleed-through and paper grain on thin or double-sided sheets.
-- [x] **Page-Curl / Book-Curve Flattening** *(Sinusoidal `Decurl` compensation implemented)*
-  - Correct mild curvature on thick notebooks, receipts, or bound pages that do not lie flat.
+### Core Architecture & UI
+- [x] Offline camera capture, gallery import (`JPG`, `PNG`, `WebP`), SQLite library, and Light/Dark themes (`v1.0.0`)
+- [x] Android Safe Area insets (`react-native-safe-area-context`) so headers/controls never overlap the status bar or navigation bar (`v1.0.1`)
+- [x] Premium Home UI: Cobalt **Scan Document** hero card, 3-column **Import / Enhance / Export** quick tools, elevated document cards with page badges, and floating **Scan** FAB
+- [x] Automated compressed Android APK builds (`arm64-v8a` + Gradle cache + concurrency cancel-in-progress) and **In-App Update** prompt (`v1.0.1–v1.0.8`)
+- [x] Local PDF Download to device folders (e.g., **Downloads**) via Android SAF directory picker (`Save PDF to Device`) + Share Sheet (`Share / Open PDF`)
+
+### Capture & Smart Scanning
+- [x] **4-Side Hough Auto-Crop + Line Refinement:** Multi-channel (RGB + Luma) Sobel + NMS + 4-side Hough voting + weighted least-squares corner intersection
+- [x] **Corner Magnifier Loupe (`2.4×` Zoom Bubble):** Crosshair zoom bubble opposite your finger while dragging any corner handle
+- [x] **Multi-Page Batch Scan Mode:** Continuous camera capture with live thumbnail, page counter badge, and **Done** action
+- [x] **ID Card / Two-Sided Scan Mode:** Guided Front + Back capture composed onto a single white A4 sheet (`1240×1754`)
+- [x] **Book / Two-Page Spread Split (`Split 2P`):** Splits a two-page spread down the center spine into two separate pages
+- [x] **3×3 Framing Grid, Tap-to-Focus Reticle & 3s Hands-Free Timer Shutter**
+- [x] **Auto-Orientation Detection (`Upright`):** Detects sideways text lines and rotates `90°` upright
+
+### Scanned Output, Editing & Organization
+- [x] **Halo-Free Paper Background Estimation:** Morphological local-max shadow removal in `Magic Color` and `Grayscale`
+- [x] **Specialized Scan Presets:** `Magic Color`, `Receipt`, `Whiteboard`, `Eco Print`, `Grayscale`, `B&W Scan`
+- [x] **Whiten Slider (`0..100`) & Bright / Contrast / Sharp Steppers**
+- [x] **Clean Bleed (`despeckle`):** Suppresses isolated paper specks and faint back-side bleed-through
+- [x] **Clean Edges (`cleanMargins`):** Smoothly whitens dark outer borders and edge shadows
+- [x] **Page-Curl Flattening (`Decurl`):** Sinusoidal vertical-arch compensation for curved notebook/book pages
+- [x] **Status Stamp Overlays:** Bordered `PAID`, `APPROVED`, and `CONFIDENTIAL` stamps rendered offline
+- [x] **Custom Export File Naming, Quick Date Templates & Live Compression Size Preview**
+- [x] **Folders / Tags Organization:** Local SQLite folders (`General`, `Receipts`, `IDs`, `Work`, `School`) with Home filtering and folder badges
 
 ---
 
-## 3. Document Editing, Annotations & Export
+## Need to Do
 
-- [x] **Handwritten Signature & Stamp Overlay** *(Status stamps `PAID`, `APPROVED`, `CONFIDENTIAL` implemented)*
-  - Draw or save reusable local signatures and date/status stamps (e.g., `PAID`, `CONFIDENTIAL`, `APPROVED`) to place onto scanned pages before PDF export.
-- [x] **Custom PDF Page Naming & Compression Preview**
-  - Live estimated PDF file size preview before exporting and quick templates for document naming.
-- [x] **Folders / Tags Organization**
-  - Local SQLite folders/tags (e.g., `Receipts`, `IDs`, `Work`, `School`) for quick filtering on the Home library screen.
+### On-Device Verification (`v1.0.8`)
+- [ ] Confirm GitHub Actions builds and publishes `snapdoc-1.0.8.apk`
+- [ ] Install `v1.0.8` via the in-app update prompt on your Android phone
+- [ ] Test **Single**, **Batch**, **ID Card** (Front + Back → A4), **Grid**, **Timer (`3s`)**, and **Tap-to-Focus** on device
+- [ ] Test **Auto-Crop + Corner Loupe**, **Upright**, **Split 2P**, **Decurl**, **Clean Bleed**, **Clean Edges**, **Stamp**, and all scan presets on device
+- [ ] Test **Folders** filtering and **Save PDF to Device** (Downloads folder) on device
+
+### Optional Future Enhancements
+- [ ] **Freehand Signature Pad:** Draw and save reusable handwritten signatures with your finger
+- [ ] **Interactive Brush Eraser:** Manually brush out fingers/thumbs or marks anywhere on a page
+- [ ] **Real-Time Live Edge Contour Overlay:** Requires migrating from `expo-camera` to `react-native-vision-camera` with a native frame processor
+- [ ] **Sync `docs/SYSTEM_DOCS.md`:** Document the `folder` column migration, `v1.0.4–v1.0.8` CV options, and SAF PDF export flow
