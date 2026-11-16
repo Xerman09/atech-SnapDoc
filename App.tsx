@@ -42,6 +42,7 @@ import {
   mergeDocuments,
   movePageOrder,
   renameDocument,
+  reversePageOrder,
   updateDocumentFolder,
   updatePage,
   wipeAllDatabaseData,
@@ -439,6 +440,10 @@ function MainApp() {
           }}
           onDuplicatePage={async (page) => {
             await duplicatePage(activeDoc.id, page);
+            await refreshDocuments();
+          }}
+          onReversePages={async () => {
+            await reversePageOrder(activeDoc.id);
             await refreshDocuments();
           }}
           onMovePage={async (pageId, direction) => {

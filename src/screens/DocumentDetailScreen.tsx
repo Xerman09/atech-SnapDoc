@@ -28,6 +28,7 @@ interface DocumentDetailScreenProps {
   onAddPageGallery: () => void;
   onEditPage: (page: ScannedPage) => void;
   onDuplicatePage: (page: ScannedPage) => void;
+  onReversePages: () => void;
   onMovePage: (pageId: string, direction: 'up' | 'down') => void;
   onDeletePage: (pageId: string) => void;
   onDeleteDocument: () => void;
@@ -56,6 +57,7 @@ export function DocumentDetailScreen({
   onAddPageGallery,
   onEditPage,
   onDuplicatePage,
+  onReversePages,
   onMovePage,
   onDeletePage,
   onDeleteDocument,
@@ -229,6 +231,21 @@ export function DocumentDetailScreen({
             </Pressable>
           );
         })}
+        {pages.length >= 2 ? (
+          <Pressable
+            onPress={onReversePages}
+            accessibilityRole="button"
+            accessibilityLabel="Reverse page order"
+            style={[
+              styles.folderChip,
+              { borderColor: colors.border, backgroundColor: colors.surface },
+            ]}
+          >
+            <Text style={[styles.folderChipText, { color: colors.accent }]}>
+              ⇅ Reverse Order
+            </Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
 
       <FlatList

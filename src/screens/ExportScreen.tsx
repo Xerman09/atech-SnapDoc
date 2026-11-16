@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -27,6 +27,7 @@ import {
 import { useTheme } from '../theme/ThemeContext';
 import { ScanDocument, ScannedPage } from '../types/scanner';
 import { formatRelativeDate } from '../utils/dateFormat';
+import { parsePageRange } from '../utils/pageRange';
 
 interface ExportScreenProps {
   document: ScanDocument;
@@ -42,12 +43,18 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
   const [quality, setQuality] = useState<ExportQualityPreset>('balanced');
   const [imageFormat, setImageFormat] = useState<ImageExportFormat>('jpeg');
   const [customName, setCustomName] = useState(document.title);
+  const [pageRangeInput, setPageRangeInput] = useState('All');
   const [includePageNumbers, setIncludePageNumbers] = useState(true);
   const [includeWatermark, setIncludeWatermark] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  const selectedPages = useMemo(() => {
+    const indices = parsePageRange(pageRangeInput, pages.length);
+    return indices.map((i) => pages[i]).filter(Boolean);
+  }, [pageRangeInput, pages]);
+
   const exportBaseName = customName.trim() || document.title;
-  const estKb = estimateExportSizeKb(pages.length, quality, exportMode);
+  const estKb = estimateExportSizeKb(selectedPages.length, quality, exportMode);
   const estLabel =
     estKb >= 1024 ? `~${(estKb / 1024).toFixed(1)} MB` : `~${estKb} KB`;
 
@@ -55,11 +62,18 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
 
   const handleExportPdf = async (destination: 'download' | 'share') => {
     if (busy || pages.length === 0) return;
+    if (selectedPages.length === 0) {
+      Alert.alert(
+        'Invalid Page Range',
+        `Enter page numbers between 1 and ${pages.length} (e.g. "1-3" or "All").`
+      );
+      return;
+    }
     setBusy(true);
     try {
       const { uri, sizeBytes } = await generateDocumentPdf({
         document: { ...document, title: exportBaseName },
-        pages,
+        pages: selectedPages,
         pageSize,
         margin,
         quality,
@@ -94,12 +108,19 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
 
   const handleExportImages = async (destination: 'gallery' | 'share') => {
     if (busy || pages.length === 0) return;
+    if (selectedPages.length === 0) {
+      Alert.alert(
+        'Invalid Page Range',
+        `Enter page numbers between 1 and ${pages.length} (e.g. "1-3" or "All").`
+      );
+      return;
+    }
     setBusy(true);
     try {
       const preparedUris: string[] = [];
-      for (let i = 0; i < pages.length; i++) {
+      for (let i = 0; i < selectedPages.length; i++) {
         const res = await prepareExportImage({
-          page: pages[i],
+          page: selectedPages[i],
           format: imageFormat,
           quality,
           baseTitle: exportBaseName,
@@ -411,6 +432,29 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
               </Pressable>
             ))}
           </View>
+          {pages.length > 1 ? (
+            <>
+              <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 4 }]}>
+                Pages ({selectedPages.length}/{pages.length} selected)
+              </Text>
+              <TextInput
+                value={pageRangeInput}
+                onChangeText={setPageRangeInput}
+                maxLength={40}
+                placeholder={`All or e.g. 1-${Math.min(2, pages.length)}`}
+                placeholderTextColor={colors.textMuted}
+                accessibilityLabel="Export page range"
+                style={[
+                  styles.nameInput,
+                  {
+                    color: colors.textPrimary,
+                    borderColor: colors.border,
+                    backgroundColor: colors.background,
+                  },
+                ]}
+              />
+            </>
+          ) : null}
         </View>
 
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>

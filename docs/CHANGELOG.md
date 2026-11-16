@@ -3,6 +3,11 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 17, 2026
+### Release v1.0.15 — Export Page Range & Reverse Page Order
+- Added `src/utils/pageRange.ts` (`parsePageRange`) and a **Pages** range selector (`All` or e.g. `1-3, 5`) in `src/screens/ExportScreen.tsx` for exporting subsets of multi-page documents.
+- Added `reversePageOrder` in `src/services/storage/database.ts` and a **Reverse Order** action chip in `src/screens/DocumentDetailScreen.tsx`.
+- Added unit tests in `src/__tests__/pageRange.test.ts` and bumped app version to `1.0.15` (`android.versionCode: 15`).
+
 ### Release v1.0.14 — Library Sorting, Duplicate Page & Local Vault Stats
 - Added **Sort** order toggle (`Newest`, `Oldest`, `A–Z`, `Pages`) in the Recent Documents header in `App.tsx`.
 - Added `duplicatePage` in `src/services/storage/database.ts` and a **Duplicate Page** icon button on page cards in `src/screens/DocumentDetailScreen.tsx`.
