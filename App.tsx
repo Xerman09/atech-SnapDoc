@@ -38,6 +38,7 @@ import {
   deletePage,
   listDocuments,
   listPagesByDocument,
+  mergeDocuments,
   movePageOrder,
   renameDocument,
   updateDocumentFolder,
@@ -80,6 +81,8 @@ function MainApp() {
   const [documents, setDocuments] = useState<ScanDocument[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFolder, setSelectedFolder] = useState<'All' | DocumentFolder>('All');
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedDocIds, setSelectedDocIds] = useState<string[]>([]);
   const [activeDoc, setActiveDoc] = useState<ScanDocument | null>(null);
   const [activePages, setActivePages] = useState<ScannedPage[]>([]);
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
@@ -685,10 +688,38 @@ function MainApp() {
           <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
             RECENT DOCUMENTS
           </Text>
-          <View style={[styles.countPill, { backgroundColor: colors.surfaceElevated }]}>
-            <Text style={[styles.sectionCount, { color: colors.textSecondary }]}>
-              {filteredDocuments.length}
-            </Text>
+          <View style={styles.sectionHeaderRight}>
+            {documents.length >= 2 || selectMode ? (
+              <Pressable
+                onPress={() => {
+                  setSelectMode((prev) => !prev);
+                  setSelectedDocIds([]);
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={selectMode ? 'Cancel multi-select' : 'Select multiple documents to merge or delete'}
+                style={[
+                  styles.selectToggleBtn,
+                  {
+                    borderColor: selectMode ? colors.accent : colors.border,
+                    backgroundColor: selectMode ? colors.accentSoft : colors.surface,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.selectToggleText,
+                    { color: selectMode ? colors.accent : colors.textSecondary },
+                  ]}
+                >
+                  {selectMode ? 'Done' : 'Select'}
+                </Text>
+              </Pressable>
+            ) : null}
+            <View style={[styles.countPill, { backgroundColor: colors.surfaceElevated }]}>
+              <Text style={[styles.sectionCount, { color: colors.textSecondary }]}>
+                {filteredDocuments.length}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -774,10 +805,22 @@ function MainApp() {
           }
           renderItem={({ item }) => {
             const formattedDate = formatRelativeDate(item.updatedAt);
+            const isSelected = selectedDocIds.includes(item.id);
             return (
               <Pressable
-                onPress={() => openDocument(item, 'document')}
+                onPress={() => {
+                  if (selectMode) {
+                    setSelectedDocIds((prev) =>
+                      prev.includes(item.id)
+                        ? prev.filter((id) => id !== item.id)
+                        : [...prev, item.id]
+                    );
+                    return;
+                  }
+                  openDocument(item, 'document');
+                }}
                 onLongPress={() => {
+                  if (selectMode) return;
                   Alert.alert(item.title, 'Choose a quick action', [
                     { text: 'Open', onPress: () => openDocument(item, 'document') },
                     { text: 'Export PDF / Image', onPress: () => openDocument(item, 'export') },
@@ -797,12 +840,19 @@ function MainApp() {
                 style={({ pressed }) => [
                   styles.pageCard,
                   {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
+                    backgroundColor: isSelected ? colors.accentSoft : colors.surface,
+                    borderColor: isSelected ? colors.accent : colors.border,
                     opacity: pressed ? 0.85 : 1,
                   },
                 ]}
               >
+                {selectMode ? (
+                  <Ionicons
+                    name={isSelected ? 'checkbox' : 'square-outline'}
+                    size={22}
+                    color={isSelected ? colors.accent : colors.textMuted}
+                  />
+                ) : null}
                 {item.coverUri ? (
                   <Image
                     source={{ uri: item.coverUri }}
@@ -854,27 +904,112 @@ function MainApp() {
         />
       </ScrollView>
 
-      {/* Floating Scan Action Button */}
-      <Pressable
-        onPress={() => {
-          setActiveDoc(null);
-          setRoute('capture');
-        }}
-        accessibilityRole="button"
-        accessibilityLabel="Quick camera scan"
-        style={({ pressed }) => [
-          styles.fab,
-          {
-            backgroundColor: colors.heroBg,
-            borderColor: colors.heroBorder,
-            opacity: pressed ? 0.92 : 1,
-            transform: [{ scale: pressed ? 0.96 : 1 }],
-          },
-        ]}
-      >
-        <Ionicons name="camera" size={20} color={colors.heroText} />
-        <Text style={[styles.fabText, { color: colors.heroText }]}>Scan</Text>
-      </Pressable>
+      {selectMode ? (
+        <View
+          style={[
+            styles.bulkBar,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <Pressable
+            disabled={selectedDocIds.length < 2}
+            onPress={async () => {
+              const merged = await mergeDocuments(
+                selectedDocIds,
+                `Merged ${formatShortDate(Date.now())}`
+              );
+              setSelectMode(false);
+              setSelectedDocIds([]);
+              await refreshDocuments();
+              await openDocument(merged, 'document');
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={`Merge ${selectedDocIds.length} selected documents`}
+            style={[
+              styles.bulkBtn,
+              {
+                backgroundColor:
+                  selectedDocIds.length >= 2 ? colors.accent : colors.surfaceElevated,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.bulkBtnText,
+                {
+                  color:
+                    selectedDocIds.length >= 2 ? '#FFFFFF' : colors.textMuted,
+                },
+              ]}
+            >
+              Merge ({selectedDocIds.length})
+            </Text>
+          </Pressable>
+          <Pressable
+            disabled={selectedDocIds.length === 0}
+            onPress={() => {
+              Alert.alert(
+                'Delete Selected?',
+                `Delete ${selectedDocIds.length} selected document(s)?`,
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                      for (const id of selectedDocIds) {
+                        await deleteDocument(id);
+                      }
+                      setSelectMode(false);
+                      setSelectedDocIds([]);
+                      await refreshDocuments();
+                    },
+                  },
+                ]
+              );
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={`Delete ${selectedDocIds.length} selected documents`}
+            style={[
+              styles.bulkBtn,
+              {
+                backgroundColor:
+                  selectedDocIds.length > 0 ? colors.danger : colors.surfaceElevated,
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.bulkBtnText,
+                { color: selectedDocIds.length > 0 ? '#FFFFFF' : colors.textMuted },
+              ]}
+            >
+              Delete ({selectedDocIds.length})
+            </Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable
+          onPress={() => {
+            setActiveDoc(null);
+            setRoute('capture');
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Quick camera scan"
+          style={({ pressed }) => [
+            styles.fab,
+            {
+              backgroundColor: colors.heroBg,
+              borderColor: colors.heroBorder,
+              opacity: pressed ? 0.92 : 1,
+              transform: [{ scale: pressed ? 0.96 : 1 }],
+            },
+          ]}
+        >
+          <Ionicons name="camera" size={20} color={colors.heroText} />
+          <Text style={[styles.fabText, { color: colors.heroText }]}>Scan</Text>
+        </Pressable>
+      )}
 
       <UpdateModal
         manifest={availableUpdate}
@@ -1177,5 +1312,46 @@ const styles = StyleSheet.create({
   folderFilterText: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  sectionHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  selectToggleBtn: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  selectToggleText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
+  bulkBar: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    bottom: 20,
+    flexDirection: 'row',
+    gap: 10,
+    padding: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    shadowColor: '#000000',
+    shadowOpacity: 0.14,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  bulkBtn: {
+    flex: 1,
+    borderRadius: 11,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  bulkBtnText: {
+    fontSize: 13.5,
+    fontWeight: '700',
   },
 });

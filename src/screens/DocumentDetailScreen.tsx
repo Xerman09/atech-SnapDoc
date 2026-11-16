@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StudioShell } from '../components/StudioShell';
+import { shareLocalFile } from '../services/export/exportService';
 import { useTheme } from '../theme/ThemeContext';
 import { DocumentFolder, ScanDocument, ScannedPage } from '../types/scanner';
 import { formatRelativeDate } from '../utils/dateFormat';
@@ -322,6 +323,27 @@ export function DocumentDetailScreen({
                 Page {previewPage.index + 1} of {pages.length}
               </Text>
               <View style={styles.lightboxActions}>
+                <Pressable
+                  onPress={async () => {
+                    try {
+                      await shareLocalFile(
+                        previewPage.page.processedUri,
+                        'image/jpeg',
+                        `${document.title}_page_${previewPage.index + 1}.jpg`
+                      );
+                    } catch (err) {
+                      Alert.alert(
+                        'Share Failed',
+                        err instanceof Error ? err.message : 'Could not share page.'
+                      );
+                    }
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Share this single page"
+                  style={styles.lightboxBtn}
+                >
+                  <Text style={styles.lightboxBtnText}>Share</Text>
+                </Pressable>
                 <Pressable
                   onPress={() => {
                     const target = previewPage.page;

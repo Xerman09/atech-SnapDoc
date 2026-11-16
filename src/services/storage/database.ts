@@ -262,6 +262,34 @@ export async function updateDocumentFolder(
   return safeFolder;
 }
 
+/**
+ * Combines pages from multiple documents into a new merged document (preserving order).
+ */
+export async function mergeDocuments(
+  documentIds: string[],
+  mergedTitle: string
+): Promise<ScanDocument> {
+  if (documentIds.length < 2) {
+    throw new Error('Select at least 2 documents to merge.');
+  }
+  const merged = await createDocument(mergedTitle, 'General');
+  for (const docId of documentIds) {
+    const pages = await listPagesByDocument(docId);
+    for (const p of pages) {
+      await addPageToDocument({
+        documentId: merged.id,
+        originalUri: p.originalUri,
+        processedUri: p.processedUri,
+        cropQuad: p.cropQuad,
+        filter: p.filter,
+        adjustments: p.adjustments,
+      });
+    }
+  }
+  const allDocs = await listDocuments();
+  return allDocs.find((d) => d.id === merged.id) ?? merged;
+}
+
 export async function listPagesByDocument(documentId: string): Promise<ScannedPage[]> {
   if (Platform.OS === 'web') return webListPages(documentId);
   const db = await getDb();

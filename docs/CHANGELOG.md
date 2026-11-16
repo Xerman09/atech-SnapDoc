@@ -3,6 +3,11 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 17, 2026
+### Release v1.0.13 — Multi-Document Merge, Bulk Delete & Lightbox Single-Page Share
+- Added `mergeDocuments` in `src/services/storage/database.ts` and multi-select **Select / Merge / Delete** workflow on the Home library in `App.tsx`.
+- Added **Share** button inside the full-screen Page Lightbox in `src/screens/DocumentDetailScreen.tsx` to share any individual page directly.
+- Bumped app version to `1.0.13` (`android.versionCode: 13`).
+
 ### Release v1.0.12 — Hold-to-Compare, Lightbox Paging & PDF Page Numbers/Watermark
 - Added **Hold: Compare** pill on the Enhance preview in `src/screens/CropAndEnhanceScreen.tsx` so users can press-and-hold to compare the enhanced scan against the original capture.
 - Added **Prev / Next** page navigation inside the full-screen Lightbox modal in `src/screens/DocumentDetailScreen.tsx`.
