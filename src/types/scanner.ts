@@ -1,6 +1,12 @@
 export type ThemeMode = 'system' | 'light' | 'dark';
 
-export type FilterPreset = 'original' | 'magic_color' | 'grayscale' | 'bw_scan';
+export type FilterPreset =
+  | 'original'
+  | 'magic_color'
+  | 'grayscale'
+  | 'bw_scan'
+  | 'receipt'
+  | 'whiteboard';
 
 export interface Point {
   x: number;
@@ -18,6 +24,7 @@ export interface AdjustmentSettings {
   brightness: number; // -100 to 100
   contrast: number;   // -100 to 100
   sharpness: number;  // 0 to 100
+  whitening?: number; // 0 to 100 (paper background whitening)
 }
 
 export interface ScannedPage {

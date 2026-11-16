@@ -161,7 +161,12 @@ export function applyScanFilterToRgba(
   }
 
   let paperBg: Float32Array | null = null;
-  if (filter === 'magic_color' || filter === 'grayscale') {
+  if (
+    filter === 'magic_color' ||
+    filter === 'grayscale' ||
+    filter === 'receipt' ||
+    filter === 'whiteboard'
+  ) {
     const gray = new Uint8Array(totalPixels);
     for (let i = 0; i < totalPixels; i++) {
       const idx = i * 4;
@@ -170,6 +175,9 @@ export function applyScanFilterToRgba(
     const radius = Math.max(10, Math.round(Math.min(width, height) / 26));
     paperBg = computeLocalPaperBackground(gray, width, height, radius);
   }
+
+  const whiteningStrength = Math.max(0, Math.min(100, adjustments.whitening ?? 35)) / 100;
+  const targetWhite = 232 + whiteningStrength * 22; // 232..254
 
   for (let i = 0; i < totalPixels; i++) {
     const idx = i * 4;
@@ -181,18 +189,45 @@ export function applyScanFilterToRgba(
       let luma = 0.299 * r + 0.587 * g + 0.114 * b;
       if (paperBg) {
         const bg = Math.max(45, paperBg[i]);
-        const normalized = Math.min(255, (luma * 242) / bg);
-        luma = luma * 0.35 + normalized * 0.65;
-        // Gentle photocopy contrast
+        const normalized = Math.min(255, (luma * targetWhite) / bg);
+        const blend = 0.45 + whiteningStrength * 0.4;
+        luma = luma * (1 - blend) + normalized * blend;
         luma = (luma - 130) * 1.18 + 136;
       }
       r = luma;
       g = luma;
       b = luma;
+    } else if (filter === 'receipt' && paperBg) {
+      // Thermal receipt mode: flatten faded paper & darken faint ink
+      let luma = 0.299 * r + 0.587 * g + 0.114 * b;
+      const bg = Math.max(45, paperBg[i]);
+      const normalized = Math.min(255, (luma * (targetWhite + 4)) / bg);
+      // Push light paper to pure white while pulling ink darker
+      luma = (normalized - 155) * 1.55 + 160;
+      r = luma;
+      g = luma;
+      b = luma;
+    } else if (filter === 'whiteboard' && paperBg) {
+      // Whiteboard mode: strong glare/shadow flattening + vivid marker colors
+      const bg = Math.max(45, paperBg[i]);
+      const gain = Math.min(2.3, Math.max(0.85, (targetWhite + 4) / bg));
+      r = Math.min(255, r * gain);
+      g = Math.min(255, g * gain);
+      b = Math.min(255, b * gain);
+
+      const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+      const satBoost = 1.32;
+      r = luma + (r - luma) * satBoost;
+      g = luma + (g - luma) * satBoost;
+      b = luma + (b - luma) * satBoost;
+
+      r = (r - 140) * 1.28 + 150;
+      g = (g - 140) * 1.28 + 150;
+      b = (b - 140) * 1.28 + 150;
     } else if (filter === 'magic_color' && paperBg) {
       // Flatten uneven shadows using paper-background estimate (no ink halos)
       const bg = Math.max(45, paperBg[i]);
-      const gain = Math.min(2.1, Math.max(0.85, 244 / bg));
+      const gain = Math.min(2.15, Math.max(0.85, targetWhite / bg));
       r = Math.min(255, r * gain);
       g = Math.min(255, g * gain);
       b = Math.min(255, b * gain);
@@ -204,9 +239,10 @@ export function applyScanFilterToRgba(
       g = luma + (g - luma) * satBoost;
       b = luma + (b - luma) * satBoost;
 
-      r = (r - 132) * 1.2 + 140;
-      g = (g - 132) * 1.2 + 140;
-      b = (b - 132) * 1.2 + 140;
+      const contrastBoost = 1.16 + whiteningStrength * 0.1;
+      r = (r - 132) * contrastBoost + 138 + whiteningStrength * 6;
+      g = (g - 132) * contrastBoost + 138 + whiteningStrength * 6;
+      b = (b - 132) * contrastBoost + 138 + whiteningStrength * 6;
     }
 
     r = (r - 128) * contrastFactor + 128 + brightnessOffset;
@@ -219,9 +255,15 @@ export function applyScanFilterToRgba(
     out[idx + 3] = 255;
   }
 
-  // Unsharp mask sharpening: automatic subtle clarity for magic_color / grayscale + user slider
+  // Unsharp mask sharpening: automatic subtle clarity for scan presets + user slider
   const baseSharp =
-    filter === 'magic_color' ? 0.28 : filter === 'grayscale' ? 0.2 : 0;
+    filter === 'magic_color' || filter === 'whiteboard'
+      ? 0.28
+      : filter === 'receipt'
+        ? 0.35
+        : filter === 'grayscale'
+          ? 0.2
+          : 0;
   const sharpAmount = baseSharp + (adjustments.sharpness / 100) * 0.85;
 
   if (sharpAmount > 0 && width > 2 && height > 2) {

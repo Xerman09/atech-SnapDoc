@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -27,6 +28,9 @@ export function CaptureScreen({ onCaptured, onCancel }: CaptureScreenProps) {
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<CameraType>('back');
   const [torch, setTorch] = useState(false);
+  const [batchMode, setBatchMode] = useState(false);
+  const [showGrid, setShowGrid] = useState(true);
+  const [batchAssets, setBatchAssets] = useState<CapturedImageAsset[]>([]);
   const [busy, setBusy] = useState(false);
 
   const handleGalleryImport = async () => {
@@ -59,16 +63,19 @@ export function CaptureScreen({ onCaptured, onCancel }: CaptureScreenProps) {
       if (!photo?.uri) return;
 
       const savedUri = saveScanImageToAppStorage(photo.uri, `camera_${Date.now()}.jpg`, 'jpg');
-      onCaptured([
-        {
-          id: `page_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-          uri: savedUri,
-          width: photo.width,
-          height: photo.height,
-          source: 'camera',
-          createdAt: Date.now(),
-        },
-      ]);
+      const asset: CapturedImageAsset = {
+        id: `page_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        uri: savedUri,
+        width: photo.width,
+        height: photo.height,
+        source: 'camera',
+        createdAt: Date.now(),
+      };
+      if (batchMode) {
+        setBatchAssets((prev) => [...prev, asset]);
+      } else {
+        onCaptured([asset]);
+      }
     } catch {
       Alert.alert('Capture Failed', 'Could not capture photo. Please try again.');
     } finally {
@@ -146,13 +153,39 @@ export function CaptureScreen({ onCaptured, onCancel }: CaptureScreenProps) {
 
         <View style={styles.topRightControls}>
           <Pressable
+            onPress={() => setShowGrid((prev) => !prev)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: showGrid }}
+            accessibilityLabel={showGrid ? 'Hide framing grid' : 'Show framing grid'}
+            style={[
+              styles.overlayBtn,
+              showGrid && styles.overlayBtnActive,
+            ]}
+          >
+            <Text style={styles.overlayBtnText}>Grid</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setBatchMode((prev) => !prev)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: batchMode }}
+            accessibilityLabel={batchMode ? 'Switch to single page mode' : 'Switch to batch scan mode'}
+            style={[
+              styles.overlayBtn,
+              batchMode && styles.overlayBtnActive,
+            ]}
+          >
+            <Text style={styles.overlayBtnText}>
+              {batchMode ? 'Batch' : 'Single'}
+            </Text>
+          </Pressable>
+          <Pressable
             onPress={() => setTorch((prev) => !prev)}
             accessibilityRole="button"
             accessibilityState={{ selected: torch }}
             accessibilityLabel={torch ? 'Turn flash off' : 'Turn flash on'}
-            style={styles.overlayBtn}
+            style={[styles.overlayBtn, torch && styles.overlayBtnActive]}
           >
-            <Text style={styles.overlayBtnText}>{torch ? 'Flash: On' : 'Flash: Off'}</Text>
+            <Text style={styles.overlayBtnText}>{torch ? 'Flash' : 'No Flash'}</Text>
           </Pressable>
           <Pressable
             onPress={() => setFacing((prev) => (prev === 'back' ? 'front' : 'back'))}
@@ -172,6 +205,14 @@ export function CaptureScreen({ onCaptured, onCancel }: CaptureScreenProps) {
           facing={facing}
           enableTorch={torch}
         />
+        {showGrid ? (
+          <View style={styles.gridOverlay} pointerEvents="none">
+            <View style={[styles.gridLineV, { left: '33.33%' }]} />
+            <View style={[styles.gridLineV, { left: '66.66%' }]} />
+            <View style={[styles.gridLineH, { top: '33.33%' }]} />
+            <View style={[styles.gridLineH, { top: '66.66%' }]} />
+          </View>
+        ) : null}
         <View style={styles.frameGuide} pointerEvents="none">
           <View style={[styles.corner, styles.cornerTL]} />
           <View style={[styles.corner, styles.cornerTR]} />
@@ -205,7 +246,26 @@ export function CaptureScreen({ onCaptured, onCancel }: CaptureScreenProps) {
           )}
         </Pressable>
 
-        <View style={styles.placeholderRight} />
+        {batchAssets.length > 0 ? (
+          <Pressable
+            onPress={() => onCaptured(batchAssets)}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel={`Finish batch with ${batchAssets.length} pages`}
+            style={styles.batchDoneBtn}
+          >
+            <Image
+              source={{ uri: batchAssets[batchAssets.length - 1].uri }}
+              style={styles.batchThumb}
+            />
+            <View style={styles.batchBadge}>
+              <Text style={styles.batchBadgeText}>{batchAssets.length}</Text>
+            </View>
+            <Text style={styles.batchDoneText}>Done</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.placeholderRight} />
+        )}
       </View>
     </SafeAreaView>
   );
@@ -268,15 +328,19 @@ const styles = StyleSheet.create({
   },
   overlayBtn: {
     backgroundColor: 'rgba(15, 23, 42, 0.75)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.25)',
   },
+  overlayBtnActive: {
+    backgroundColor: 'rgba(37, 99, 235, 0.85)',
+    borderColor: '#60A5FA',
+  },
   overlayBtnText: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
   viewfinderWrap: {
@@ -369,5 +433,62 @@ const styles = StyleSheet.create({
   },
   placeholderRight: {
     width: 72,
+  },
+  gridOverlay: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+  },
+  gridLineV: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+  },
+  gridLineH: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.22)',
+  },
+  batchDoneBtn: {
+    width: 72,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+    position: 'relative',
+  },
+  batchThumb: {
+    width: 44,
+    height: 52,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#60A5FA',
+  },
+  batchBadge: {
+    position: 'absolute',
+    top: -4,
+    right: 8,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#2563EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 5,
+  },
+  batchBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  batchDoneText: {
+    color: '#FFFFFF',
+    fontSize: 11.5,
+    fontWeight: '700',
   },
 });

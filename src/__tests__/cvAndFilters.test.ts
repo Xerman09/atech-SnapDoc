@@ -101,4 +101,32 @@ describe('CV geometry and scan filter engine', () => {
     expect(Math.abs(quad.bottomRight.x - 125)).toBeLessThanOrEqual(4);
     expect(Math.abs(quad.bottomRight.y - 95)).toBeLessThanOrEqual(4);
   });
+
+  it('applies receipt and whiteboard scan presets with whitening', () => {
+    const src = new Uint8Array([
+      210, 210, 195, 255,
+      60, 60, 60, 255,
+      205, 205, 190, 255,
+      40, 80, 180, 255,
+    ]);
+
+    const receipt = applyScanFilterToRgba(src, 2, 2, 'receipt', {
+      brightness: 0,
+      contrast: 0,
+      sharpness: 15,
+      whitening: 60,
+    });
+    expect(receipt[0]).toBeGreaterThan(220);
+    expect(receipt[0]).toBe(receipt[1]); // monochrome thermal output
+
+    const whiteboard = applyScanFilterToRgba(src, 2, 2, 'whiteboard', {
+      brightness: 0,
+      contrast: 0,
+      sharpness: 15,
+      whitening: 50,
+    });
+    expect(whiteboard[0]).toBeGreaterThan(220);
+    // Blue marker pixel remains strongly blue-dominant
+    expect(whiteboard[14]).toBeGreaterThan(whiteboard[12]);
+  });
 });

@@ -43,6 +43,8 @@ type CornerKey = keyof CropQuad;
 const FILTER_OPTIONS: { id: FilterPreset; label: string }[] = [
   { id: 'original', label: 'Original' },
   { id: 'magic_color', label: 'Magic Color' },
+  { id: 'receipt', label: 'Receipt' },
+  { id: 'whiteboard', label: 'Whiteboard' },
   { id: 'grayscale', label: 'Grayscale' },
   { id: 'bw_scan', label: 'B&W Scan' },
 ];
@@ -51,7 +53,11 @@ const DEFAULT_ADJUSTMENTS: AdjustmentSettings = {
   brightness: 0,
   contrast: 0,
   sharpness: 15,
+  whitening: 35,
 };
+
+const LOUPE_SIZE = 112;
+const LOUPE_ZOOM = 2.4;
 
 function clamp01(v: number): number {
   return Math.max(0, Math.min(1, v));
@@ -70,6 +76,7 @@ export function CropAndEnhanceScreen({
   const [filter, setFilter] = useState<FilterPreset>('magic_color');
   const [adjustments, setAdjustments] = useState<AdjustmentSettings>(DEFAULT_ADJUSTMENTS);
   const [busy, setBusy] = useState(false);
+  const [activeCorner, setActiveCorner] = useState<CornerKey | null>(null);
   const [boxSize, setBoxSize] = useState({ width: 300, height: 400 });
   const [naturalSize, setNaturalSize] = useState<{ width: number; height: number } | null>(null);
 
@@ -134,6 +141,7 @@ export function CropAndEnhanceScreen({
       onStartShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
         startPoint = { ...quadRef.current[corner] };
+        setActiveCorner(corner);
       },
       onPanResponderMove: (_, gesture) => {
         const w = Math.max(1, imgRectRef.current.width);
@@ -144,6 +152,12 @@ export function CropAndEnhanceScreen({
           ...prev,
           [corner]: { x: nextX, y: nextY },
         }));
+      },
+      onPanResponderRelease: () => {
+        setActiveCorner(null);
+      },
+      onPanResponderTerminate: () => {
+        setActiveCorner(null);
       },
     });
   };
@@ -300,6 +314,37 @@ export function CropAndEnhanceScreen({
           </View>
         ) : null}
 
+        {step === 'crop' && activeCorner ? (() => {
+          const pt = quad[activeCorner];
+          const cx = pt.x * imgRect.width;
+          const cy = pt.y * imgRect.height;
+          const placeRight = pt.x < 0.5;
+          return (
+            <View
+              pointerEvents="none"
+              style={[
+                styles.loupeWrap,
+                placeRight ? { right: 14 } : { left: 14 },
+                { borderColor: colors.accent },
+              ]}
+            >
+              <Image
+                source={{ uri: sourceUri }}
+                resizeMode="cover"
+                style={{
+                  position: 'absolute',
+                  width: imgRect.width * LOUPE_ZOOM,
+                  height: imgRect.height * LOUPE_ZOOM,
+                  left: LOUPE_SIZE * 0.5 - cx * LOUPE_ZOOM,
+                  top: LOUPE_SIZE * 0.5 - cy * LOUPE_ZOOM,
+                }}
+              />
+              <View style={styles.loupeCrossH} />
+              <View style={styles.loupeCrossV} />
+            </View>
+          );
+        })() : null}
+
         {busy ? (
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color="#FFFFFF" />
@@ -387,21 +432,24 @@ export function CropAndEnhanceScreen({
           <View style={styles.adjustGrid}>
             {(
               [
-                ['brightness', 'Brightness', -100, 100, 15],
+                ['brightness', 'Bright', -100, 100, 15],
                 ['contrast', 'Contrast', -100, 100, 15],
-                ['sharpness', 'Sharpness', 0, 100, 20],
+                ['sharpness', 'Sharp', 0, 100, 20],
+                ['whitening', 'Whiten', 0, 100, 15],
               ] as [keyof AdjustmentSettings, string, number, number, number][]
-            ).map(([key, label, min, max, delta]) => (
+            ).map(([key, label, min, max, delta]) => {
+              const currentVal = adjustments[key] ?? 0;
+              return (
               <View key={key} style={[styles.adjustItem, { borderColor: colors.border }]}>
                 <Text style={[styles.adjustLabel, { color: colors.textSecondary }]}>
-                  {label}: {adjustments[key]}
+                  {label}: {currentVal}
                 </Text>
                 <View style={styles.stepperRow}>
                   <Pressable
                     onPress={() => {
                       const next = {
                         ...adjustments,
-                        [key]: Math.max(min, adjustments[key] - delta),
+                        [key]: Math.max(min, currentVal - delta),
                       };
                       setAdjustments(next);
                       runProcessing(filter, next);
@@ -416,7 +464,7 @@ export function CropAndEnhanceScreen({
                     onPress={() => {
                       const next = {
                         ...adjustments,
-                        [key]: Math.min(max, adjustments[key] + delta),
+                        [key]: Math.min(max, currentVal + delta),
                       };
                       setAdjustments(next);
                       runProcessing(filter, next);
@@ -429,7 +477,8 @@ export function CropAndEnhanceScreen({
                   </Pressable>
                 </View>
               </View>
-            ))}
+              );
+            })}
           </View>
 
           <Pressable
@@ -599,5 +648,36 @@ const styles = StyleSheet.create({
   reCropText: {
     fontSize: 13,
     fontWeight: '600',
+  },
+  loupeWrap: {
+    position: 'absolute',
+    top: 14,
+    width: LOUPE_SIZE,
+    height: LOUPE_SIZE,
+    borderRadius: LOUPE_SIZE / 2,
+    borderWidth: 2.5,
+    overflow: 'hidden',
+    backgroundColor: '#0B1020',
+    shadowColor: '#000000',
+    shadowOpacity: 0.45,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
+  },
+  loupeCrossH: {
+    position: 'absolute',
+    left: LOUPE_SIZE * 0.5 - 10,
+    top: LOUPE_SIZE * 0.5 - 0.75,
+    width: 20,
+    height: 1.5,
+    backgroundColor: '#60A5FA',
+  },
+  loupeCrossV: {
+    position: 'absolute',
+    left: LOUPE_SIZE * 0.5 - 0.75,
+    top: LOUPE_SIZE * 0.5 - 10,
+    width: 1.5,
+    height: 20,
+    backgroundColor: '#60A5FA',
   },
 });

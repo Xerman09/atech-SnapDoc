@@ -2,6 +2,14 @@
 
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
+## [Unreleased] — Nov 16, 2026
+### Release v1.0.4 — Corner Magnifier Loupe, Batch Scan, Framing Grid & Scan Presets
+- Added a **2.4× Corner Magnifier Loupe** with crosshair in `src/screens/CropAndEnhanceScreen.tsx` when dragging any crop corner handle.
+- Added **Multi-Page Batch Scan Mode** (live page thumbnail + counter badge + `Done` action) and a toggleable **3×3 Framing Grid** in `src/screens/CaptureScreen.tsx`.
+- Added **Receipt** and **Whiteboard** scan presets plus a **Whiten** (`0..100`) paper-whitening control in `src/types/scanner.ts`, `src/services/filters/scanFilters.ts`, `src/screens/CropAndEnhanceScreen.tsx`, and `src/screens/DocumentDetailScreen.tsx`.
+- Added unit tests for `receipt` and `whiteboard` presets in `src/__tests__/cvAndFilters.test.ts` and updated `docs/FEATURE_ROADMAP.md`.
+- Bumped app version to `1.0.4` (`android.versionCode: 4`).
+
 ## [Unreleased] — Nov 15, 2026
 ### Added (Feature Roadmap Documentation)
 - Created `docs/FEATURE_ROADMAP.md` listing planned offline-first capture, scan-output enhancement, and PDF/organization features.
