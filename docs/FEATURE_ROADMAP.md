@@ -18,7 +18,7 @@ All planned features below are designed to run **100% offline and local-only** o
   - Tap anywhere on the camera preview to focus/meter on the document, plus toggleable 3×3 alignment grid and tilt-level indicator.
 - [x] **Book / Two-Page Spread Split**
   - Capture an open two-page book or notebook spread in one shot and automatically split it along the center spine into two separate straight pages.
-- [ ] **Auto-Orientation Detection**
+- [x] **Auto-Orientation Detection**
   - Automatically detect sideways or upside-down captures and rotate them upright before saving.
 
 ---
@@ -33,7 +33,7 @@ All planned features below are designed to run **100% offline and local-only** o
   - **Eco / Light Ink:** Clean, ink-saving output optimized for physical printing.
 - [ ] **Finger / Thumb & Margin Eraser**
   - Cleanly remove fingers holding the edge of a page or dark outer margins and fill with the surrounding paper tone.
-- [ ] **Despeckle & Bleed-Through Suppression**
+- [x] **Despeckle & Bleed-Through Suppression**
   - Reduce faint back-side text bleed-through and paper grain on thin or double-sided sheets.
 - [ ] **Page-Curl / Book-Curve Flattening**
   - Correct mild curvature on thick notebooks, receipts, or bound pages that do not lie flat.
@@ -44,7 +44,7 @@ All planned features below are designed to run **100% offline and local-only** o
 
 - [ ] **Handwritten Signature & Stamp Overlay**
   - Draw or save reusable local signatures and date/status stamps (e.g., `PAID`, `CONFIDENTIAL`, `APPROVED`) to place onto scanned pages before PDF export.
-- [ ] **Custom PDF Page Naming & Compression Preview**
+- [x] **Custom PDF Page Naming & Compression Preview**
   - Live estimated PDF file size preview before exporting and quick templates for document naming.
 - [ ] **Folders / Tags Organization**
   - Local SQLite folders/tags (e.g., `Receipts`, `IDs`, `Work`, `School`) for quick filtering on the Home library screen.

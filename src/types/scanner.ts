@@ -26,6 +26,7 @@ export interface AdjustmentSettings {
   contrast: number;   // -100 to 100
   sharpness: number;  // 0 to 100
   whitening?: number; // 0 to 100 (paper background whitening)
+  despeckle?: boolean; // suppress paper grain and back-side bleed-through
 }
 
 export interface ScannedPage {

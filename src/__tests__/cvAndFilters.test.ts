@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { detectDocumentQuad } from '../services/cv/edgeDetector';
+import {
+  detectDocumentQuad,
+  shouldRotate90ForUprightText,
+} from '../services/cv/edgeDetector';
 import {
   orderQuadCorners,
   warpPerspectiveRgba,
@@ -137,5 +140,40 @@ describe('CV geometry and scan filter engine', () => {
     });
     expect(eco[0]).toBe(255);
     expect(eco[4]).toBeGreaterThan(60); // lighter ink fill for toner/ink saving
+  });
+
+  it('suppresses isolated paper specks when despeckle is enabled', () => {
+    const w = 3;
+    const h = 3;
+    const rgba = new Uint8Array(w * h * 4).fill(245);
+    // Single isolated dark speck in the center pixel (1,1)
+    const center = (1 * w + 1) * 4;
+    rgba[center] = 90;
+    rgba[center + 1] = 90;
+    rgba[center + 2] = 90;
+
+    const cleaned = applyScanFilterToRgba(rgba, w, h, 'original', {
+      brightness: 0,
+      contrast: 0,
+      sharpness: 0,
+      despeckle: true,
+    });
+    expect(cleaned[center]).toBeGreaterThan(220);
+  });
+
+  it('detects sideways vertical text lines for auto-orientation', () => {
+    const w = 64;
+    const h = 64;
+    const rgba = new Uint8Array(w * h * 4).fill(245);
+    // Draw strong vertical bars (simulating sideways horizontal text lines)
+    for (let y = 8; y < 56; y++) {
+      for (const x of [16, 26, 36, 46]) {
+        const idx = (y * w + x) * 4;
+        rgba[idx] = 20;
+        rgba[idx + 1] = 20;
+        rgba[idx + 2] = 20;
+      }
+    }
+    expect(shouldRotate90ForUprightText(rgba, w, h)).toBe(true);
   });
 });

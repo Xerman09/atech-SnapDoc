@@ -298,5 +298,41 @@ export function applyScanFilterToRgba(
     }
   }
 
+  // Selective despeckle & faint bleed-through suppression
+  if (adjustments.despeckle && width > 2 && height > 2) {
+    const snap = new Uint8Array(out);
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        const idx = (y * width + x) * 4;
+        const luma = 0.299 * snap[idx] + 0.587 * snap[idx + 1] + 0.114 * snap[idx + 2];
+        if (luma >= 235) continue;
+
+        const nUp = ((y - 1) * width + x) * 4;
+        const nDown = ((y + 1) * width + x) * 4;
+        const nLeft = (y * width + (x - 1)) * 4;
+        const nRight = (y * width + (x + 1)) * 4;
+
+        const nl = [
+          0.299 * snap[nUp] + 0.587 * snap[nUp + 1] + 0.114 * snap[nUp + 2],
+          0.299 * snap[nDown] + 0.587 * snap[nDown + 1] + 0.114 * snap[nDown + 2],
+          0.299 * snap[nLeft] + 0.587 * snap[nLeft + 1] + 0.114 * snap[nLeft + 2],
+          0.299 * snap[nRight] + 0.587 * snap[nRight + 1] + 0.114 * snap[nRight + 2],
+        ];
+        const brightNeighbors = nl.filter((v) => v >= 205).length;
+
+        // Suppress isolated dark specks or faint back-side bleed-through surrounded by clean paper
+        if (brightNeighbors >= 3 || (luma >= 165 && brightNeighbors >= 2)) {
+          out[idx] = Math.round((snap[nUp] + snap[nDown] + snap[nLeft] + snap[nRight]) * 0.25);
+          out[idx + 1] = Math.round(
+            (snap[nUp + 1] + snap[nDown + 1] + snap[nLeft + 1] + snap[nRight + 1]) * 0.25
+          );
+          out[idx + 2] = Math.round(
+            (snap[nUp + 2] + snap[nDown + 2] + snap[nLeft + 2] + snap[nRight + 2]) * 0.25
+          );
+        }
+      }
+    }
+  }
+
   return out;
 }

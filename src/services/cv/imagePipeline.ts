@@ -7,7 +7,7 @@ import { AdjustmentSettings, CropQuad, FilterPreset } from '../../types/scanner'
 import { sanitizeFilename } from '../../utils/fileValidation';
 import { getScansDirectory, saveScanImageToAppStorage } from '../storage/localFiles';
 import { applyScanFilterToRgba } from '../filters/scanFilters';
-import { detectDocumentQuad } from './edgeDetector';
+import { detectDocumentQuad, shouldRotate90ForUprightText } from './edgeDetector';
 import {
   estimateTargetDimensions,
   getDefaultCropQuad,
@@ -54,6 +54,25 @@ export async function rotateImage90(
   );
   const savedUri = saveScanImageToAppStorage(result.uri, `rot_${Date.now()}.jpg`, 'jpg');
   return { uri: savedUri, width: result.width, height: result.height };
+}
+
+/**
+ * Checks if a captured page's text lines appear sideways and rotates 90 degrees
+ * upright when detected.
+ */
+export async function autoOrientImageIfNeeded(
+  uri: string
+): Promise<{ rotated: boolean; uri: string }> {
+  try {
+    const decoded = await decodeWorkingImage(uri, 320);
+    if (shouldRotate90ForUprightText(decoded.data, decoded.width, decoded.height)) {
+      const res = await rotateImage90(uri, 'right');
+      return { rotated: true, uri: res.uri };
+    }
+    return { rotated: false, uri };
+  } catch {
+    return { rotated: false, uri };
+  }
 }
 
 /**

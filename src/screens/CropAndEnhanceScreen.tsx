@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Polygon } from 'react-native-svg';
 import {
   autoDetectNormalizedQuad,
+  autoOrientImageIfNeeded,
   processScanPage,
   rotateImage90,
   splitSpreadPage,
@@ -65,6 +66,7 @@ const DEFAULT_ADJUSTMENTS: AdjustmentSettings = {
   contrast: 0,
   sharpness: 15,
   whitening: 35,
+  despeckle: false,
 };
 
 const LOUPE_SIZE = 112;
@@ -384,6 +386,29 @@ export function CropAndEnhanceScreen({
             <Text style={[styles.toolText, { color: colors.textPrimary }]}>Rotate R</Text>
           </Pressable>
           <Pressable
+            onPress={async () => {
+              if (busy) return;
+              setBusy(true);
+              try {
+                const res = await autoOrientImageIfNeeded(sourceUri);
+                if (res.rotated) {
+                  setSourceUri(res.uri);
+                  setProcessedUri(null);
+                  setStep('crop');
+                } else {
+                  Alert.alert('Orientation', 'Document already appears upright.');
+                }
+              } finally {
+                setBusy(false);
+              }
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Auto orient upright"
+            style={[styles.toolBtn, { borderColor: colors.border }]}
+          >
+            <Text style={[styles.toolText, { color: colors.textPrimary }]}>Upright</Text>
+          </Pressable>
+          <Pressable
             onPress={() => {
               setBusy(true);
               autoDetectNormalizedQuad(sourceUri)
@@ -494,7 +519,7 @@ export function CropAndEnhanceScreen({
                 ['contrast', 'Contrast', -100, 100, 15],
                 ['sharpness', 'Sharp', 0, 100, 20],
                 ['whitening', 'Whiten', 0, 100, 15],
-              ] as [keyof AdjustmentSettings, string, number, number, number][]
+              ] as ['brightness' | 'contrast' | 'sharpness' | 'whitening', string, number, number, number][]
             ).map(([key, label, min, max, delta]) => {
               const currentVal = adjustments[key] ?? 0;
               return (
@@ -539,16 +564,48 @@ export function CropAndEnhanceScreen({
             })}
           </View>
 
-          <Pressable
-            onPress={() => setStep('crop')}
-            accessibilityRole="button"
-            accessibilityLabel="Return to crop corner editor"
-            style={[styles.reCropBtn, { borderColor: colors.border }]}
-          >
-            <Text style={[styles.reCropText, { color: colors.primary }]}>
-              Adjust Crop Corners
-            </Text>
-          </Pressable>
+          <View style={styles.enhanceFooterRow}>
+            <Pressable
+              onPress={() => {
+                const next = {
+                  ...adjustments,
+                  despeckle: !adjustments.despeckle,
+                };
+                setAdjustments(next);
+                runProcessing(filter, next);
+              }}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: Boolean(adjustments.despeckle) }}
+              accessibilityLabel="Toggle despeckle and bleed-through suppression"
+              style={[
+                styles.reCropBtn,
+                styles.footerHalfBtn,
+                {
+                  borderColor: adjustments.despeckle ? colors.accent : colors.border,
+                  backgroundColor: adjustments.despeckle ? colors.accentSoft : 'transparent',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.reCropText,
+                  { color: adjustments.despeckle ? colors.accent : colors.textPrimary },
+                ]}
+              >
+                {adjustments.despeckle ? 'Bleed Clean: On' : 'Clean Bleed'}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setStep('crop')}
+              accessibilityRole="button"
+              accessibilityLabel="Return to crop corner editor"
+              style={[styles.reCropBtn, styles.footerHalfBtn, { borderColor: colors.border }]}
+            >
+              <Text style={[styles.reCropText, { color: colors.primary }]}>
+                Adjust Corners
+              </Text>
+            </Pressable>
+          </View>
         </View>
       )}
     </SafeAreaView>
@@ -706,6 +763,13 @@ const styles = StyleSheet.create({
   reCropText: {
     fontSize: 13,
     fontWeight: '600',
+  },
+  enhanceFooterRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  footerHalfBtn: {
+    flex: 1,
   },
   loupeWrap: {
     position: 'absolute',

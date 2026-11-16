@@ -628,3 +628,50 @@ export function detectDocumentQuad(
     },
   };
 }
+
+/**
+ * Estimates whether a document image's text lines are oriented sideways (90 deg)
+ * by comparing horizontal row vs vertical column edge-projection variance.
+ */
+export function shouldRotate90ForUprightText(
+  rgba: Uint8Array,
+  width: number,
+  height: number
+): boolean {
+  if (width < 40 || height < 40) return false;
+  const luma = new Float32Array(width * height);
+  for (let i = 0; i < width * height; i++) {
+    const idx = i * 4;
+    luma[i] = 0.299 * rgba[idx] + 0.587 * rgba[idx + 1] + 0.114 * rgba[idx + 2];
+  }
+
+  const rowEnergy = new Float32Array(height);
+  const colEnergy = new Float32Array(width);
+
+  for (let y = 1; y < height - 1; y++) {
+    for (let x = 1; x < width - 1; x++) {
+      const i = y * width + x;
+      const dx = Math.abs(luma[i + 1] - luma[i - 1]);
+      const dy = Math.abs(luma[i + width] - luma[i - width]);
+      // Upright horizontal text lines create strong vertical transitions along rows
+      rowEnergy[y] += dy;
+      colEnergy[x] += dx;
+    }
+  }
+
+  const variance = (arr: Float32Array): number => {
+    let sum = 0;
+    for (let i = 0; i < arr.length; i++) sum += arr[i];
+    const mean = sum / arr.length;
+    let sq = 0;
+    for (let i = 0; i < arr.length; i++) {
+      const d = arr[i] - mean;
+      sq += d * d;
+    }
+    return sq / arr.length;
+  };
+
+  const rowVar = variance(rowEnergy) / (width * width);
+  const colVar = variance(colEnergy) / (height * height);
+  return colVar > rowVar * 1.45;
+}

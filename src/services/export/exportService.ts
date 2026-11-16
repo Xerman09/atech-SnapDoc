@@ -19,6 +19,29 @@ const QUALITY_MAP: Record<ExportQualityPreset, number> = {
   small: 0.55,
 };
 
+/**
+ * Estimates the offline export size in KB based on page count, quality preset, and format.
+ */
+export function estimateExportSizeKb(
+  pageCount: number,
+  quality: ExportQualityPreset,
+  mode: 'pdf' | 'image'
+): number {
+  const perPageKb =
+    mode === 'pdf'
+      ? quality === 'high'
+        ? 380
+        : quality === 'balanced'
+          ? 185
+          : 85
+      : quality === 'high'
+        ? 360
+        : quality === 'balanced'
+          ? 170
+          : 75;
+  return Math.max(1, pageCount) * perPageKb;
+}
+
 const MARGIN_PT_MAP: Record<PdfMarginPreset, number> = {
   none: 0,
   small: 18,

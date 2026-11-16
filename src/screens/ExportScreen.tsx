@@ -7,11 +7,13 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StudioShell } from '../components/StudioShell';
 import {
+  estimateExportSizeKb,
   ExportQualityPreset,
   generateDocumentPdf,
   ImageExportFormat,
@@ -39,14 +41,22 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
   const [margin, setMargin] = useState<PdfMarginPreset>('small');
   const [quality, setQuality] = useState<ExportQualityPreset>('balanced');
   const [imageFormat, setImageFormat] = useState<ImageExportFormat>('jpeg');
+  const [customName, setCustomName] = useState(document.title);
   const [busy, setBusy] = useState(false);
+
+  const exportBaseName = customName.trim() || document.title;
+  const estKb = estimateExportSizeKb(pages.length, quality, exportMode);
+  const estLabel =
+    estKb >= 1024 ? `~${(estKb / 1024).toFixed(1)} MB` : `~${estKb} KB`;
+
+  const todayStamp = new Date().toISOString().slice(0, 10);
 
   const handleExportPdf = async (destination: 'download' | 'share') => {
     if (busy || pages.length === 0) return;
     setBusy(true);
     try {
       const { uri, sizeBytes } = await generateDocumentPdf({
-        document,
+        document: { ...document, title: exportBaseName },
         pages,
         pageSize,
         margin,
@@ -54,7 +64,7 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
       });
       const sizeKb = Math.max(1, Math.round(sizeBytes / 1024));
       if (destination === 'download') {
-        const res = await savePdfToLocalDevice(uri, document.title);
+        const res = await savePdfToLocalDevice(uri, exportBaseName);
         if (res.saved && Platform.OS !== 'web') {
           Alert.alert(
             'PDF Saved Locally',
@@ -65,7 +75,7 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
         await shareLocalFile(
           uri,
           'application/pdf',
-          `${document.title}_${sizeKb}KB.pdf`
+          `${exportBaseName}_${sizeKb}KB.pdf`
         );
       }
     } catch (err) {
@@ -88,7 +98,7 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
           page: pages[i],
           format: imageFormat,
           quality,
-          baseTitle: document.title,
+          baseTitle: exportBaseName,
           pageNumber: i + 1,
         });
         preparedUris.push(res.uri);
@@ -103,7 +113,7 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
       } else {
         const mime = imageFormat === 'png' ? 'image/png' : 'image/jpeg';
         const ext = imageFormat === 'png' ? 'png' : 'jpg';
-        await shareLocalFile(preparedUris[0], mime, `${document.title}_page_1.${ext}`);
+        await shareLocalFile(preparedUris[0], mime, `${exportBaseName}_page_1.${ext}`);
       }
     } catch (err) {
       Alert.alert(
@@ -302,8 +312,64 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
 
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
-            Compression & Quality
+            File Name
           </Text>
+          <TextInput
+            value={customName}
+            onChangeText={setCustomName}
+            maxLength={80}
+            placeholder="Document file name..."
+            placeholderTextColor={colors.textMuted}
+            accessibilityLabel="Export file name"
+            style={[
+              styles.nameInput,
+              {
+                color: colors.textPrimary,
+                borderColor: colors.border,
+                backgroundColor: colors.background,
+              },
+            ]}
+          />
+          <View style={styles.row}>
+            {(
+              [
+                [document.title, 'Doc Title'],
+                [`Scan_${todayStamp}`, 'Scan + Date'],
+                [`Receipt_${todayStamp}`, 'Receipt + Date'],
+              ] as [string, string][]
+            ).map(([presetVal, label]) => (
+              <Pressable
+                key={label}
+                onPress={() => setCustomName(presetVal)}
+                accessibilityRole="button"
+                accessibilityLabel={`Use ${label} naming template`}
+                style={[
+                  styles.templateChip,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: colors.surfaceElevated,
+                  },
+                ]}
+              >
+                <Text style={[styles.templateChipText, { color: colors.textSecondary }]} numberOfLines={1}>
+                  {label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.qualityHeaderRow}>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              Compression & Quality
+            </Text>
+            <View style={[styles.estPill, { backgroundColor: colors.accentSoft }]}>
+              <Text style={[styles.estPillText, { color: colors.accent }]}>
+                Est. {estLabel}
+              </Text>
+            </View>
+          </View>
           <View style={styles.row}>
             {(
               [
@@ -546,5 +612,38 @@ const styles = StyleSheet.create({
   secondaryBtnText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  nameInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    fontSize: 14,
+  },
+  templateChip: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingVertical: 7,
+    paddingHorizontal: 6,
+    alignItems: 'center',
+  },
+  templateChipText: {
+    fontSize: 11.5,
+    fontWeight: '600',
+  },
+  qualityHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  estPill: {
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 999,
+  },
+  estPillText: {
+    fontSize: 11.5,
+    fontWeight: '700',
   },
 });
