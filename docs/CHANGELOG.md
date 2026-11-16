@@ -3,6 +3,13 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 16, 2026
+### Release v1.0.11 — Mobile UX Polish (Hardware Back, Lightbox Preview, Scrollable Tools & Quick Actions)
+- Added Android hardware `BackHandler` navigation across all screens in `App.tsx`.
+- Added pull-to-refresh (`RefreshControl`) and long-press quick action menu (`Open`, `Export`, `Delete`) on Home document cards in `App.tsx`.
+- Added a full-screen **Page Lightbox Modal** when tapping any page thumbnail in `src/screens/DocumentDetailScreen.tsx` (with quick `Edit` and `Close` actions).
+- Made the Enhance tools bar horizontally scrollable with comfortable pill sizing and added a **Reset** button in `src/screens/CropAndEnhanceScreen.tsx`.
+- Bumped app version to `1.0.11` (`android.versionCode: 11`).
+
 ### Release v1.0.10 — Sequential Batch Crop Queue, Reusable Signature & Undo Brush
 - Upgraded `App.tsx` and `src/screens/CropAndEnhanceScreen.tsx` with a sequential **Batch Crop Queue** (`queueLabel` e.g. `1/3`, `2/3`) so every page captured in Batch mode or Multi-Import goes through auto-crop and enhancement in order.
 - Added persistent offline signature storage (`getSavedSignature` / `setSavedSignature` in `src/services/storage/securePrefs.ts`) so `src/components/SignatureModal.tsx` preloads your saved signature across pages and documents.

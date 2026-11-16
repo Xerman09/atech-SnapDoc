@@ -3,6 +3,7 @@ import {
   Alert,
   FlatList,
   Image,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -60,6 +61,10 @@ export function DocumentDetailScreen({
   const { colors } = useTheme();
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(document.title);
+  const [previewPage, setPreviewPage] = useState<{
+    page: ScannedPage;
+    index: number;
+  } | null>(null);
 
   const handleSaveTitle = () => {
     onRename(titleDraft);
@@ -240,9 +245,9 @@ export function DocumentDetailScreen({
           return (
             <View style={[styles.pageCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <Pressable
-                onPress={() => onEditPage(item)}
+                onPress={() => setPreviewPage({ page: item, index })}
                 accessibilityRole="button"
-                accessibilityLabel={`Edit page ${index + 1}`}
+                accessibilityLabel={`Preview page ${index + 1} full screen`}
               >
                 <Image
                   source={{ uri: item.processedUri }}
@@ -303,6 +308,50 @@ export function DocumentDetailScreen({
           );
         }}
       />
+
+      <Modal
+        visible={Boolean(previewPage)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setPreviewPage(null)}
+      >
+        {previewPage ? (
+          <View style={styles.lightboxBackdrop}>
+            <View style={styles.lightboxTop}>
+              <Text style={styles.lightboxTitle}>
+                Page {previewPage.index + 1} of {pages.length}
+              </Text>
+              <View style={styles.lightboxActions}>
+                <Pressable
+                  onPress={() => {
+                    const target = previewPage.page;
+                    setPreviewPage(null);
+                    onEditPage(target);
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Edit this page"
+                  style={styles.lightboxBtn}
+                >
+                  <Text style={styles.lightboxBtnText}>Edit</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setPreviewPage(null)}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close full screen preview"
+                  style={styles.lightboxBtn}
+                >
+                  <Text style={styles.lightboxBtnText}>Close</Text>
+                </Pressable>
+              </View>
+            </View>
+            <Image
+              source={{ uri: previewPage.page.processedUri }}
+              style={styles.lightboxImage}
+              resizeMode="contain"
+            />
+          </View>
+        ) : null}
+      </Modal>
     </StudioShell>
   );
 }
@@ -489,5 +538,42 @@ const styles = StyleSheet.create({
     height: 28,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  lightboxBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(5, 8, 16, 0.96)',
+    paddingTop: 48,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+  },
+  lightboxTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  lightboxTitle: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  lightboxActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  lightboxBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 9,
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+  },
+  lightboxBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  lightboxImage: {
+    flex: 1,
+    width: '100%',
   },
 });

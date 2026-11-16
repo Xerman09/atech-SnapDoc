@@ -649,7 +649,11 @@ export function CropAndEnhanceScreen({
             })}
           </View>
 
-          <View style={styles.enhanceFooterRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.enhanceFooterRow}
+          >
             <Pressable
               onPress={() => {
                 const next = {
@@ -871,7 +875,21 @@ export function CropAndEnhanceScreen({
                 Corners
               </Text>
             </Pressable>
-          </View>
+            <Pressable
+              onPress={() => {
+                setEraserMode(false);
+                setAdjustments(DEFAULT_ADJUSTMENTS);
+                runProcessing(filter, DEFAULT_ADJUSTMENTS);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Reset adjustments to default"
+              style={[styles.reCropBtn, styles.footerHalfBtn, { borderColor: colors.border }]}
+            >
+              <Text style={[styles.reCropText, { color: colors.textSecondary }]}>
+                Reset
+              </Text>
+            </Pressable>
+          </ScrollView>
         </View>
       )}
 
@@ -1045,9 +1063,10 @@ const styles = StyleSheet.create({
   enhanceFooterRow: {
     flexDirection: 'row',
     gap: 8,
+    paddingVertical: 2,
   },
   footerHalfBtn: {
-    flex: 1,
+    paddingHorizontal: 14,
   },
   loupeWrap: {
     position: 'absolute',

@@ -2,9 +2,11 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  BackHandler,
   FlatList,
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -84,6 +86,7 @@ function MainApp() {
   const [pendingUri, setPendingUri] = useState<string | null>(null);
   const [pendingQueue, setPendingQueue] = useState<string[]>([]);
   const [queueTotal, setQueueTotal] = useState(1);
+  const [refreshing, setRefreshing] = useState(false);
   const [availableUpdate, setAvailableUpdate] = useState<UpdateManifest | null>(null);
 
   const refreshDocuments = useCallback(async () => {
@@ -115,6 +118,43 @@ function MainApp() {
       });
     })();
   }, []);
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (route === 'legal') {
+        setRoute(legalReturnRoute);
+        return true;
+      }
+      if (route === 'export') {
+        setRoute('document');
+        return true;
+      }
+      if (route === 'edit') {
+        setPendingUri(null);
+        setPendingQueue([]);
+        setQueueTotal(1);
+        setEditingPageId(null);
+        setRoute(activeDoc ? 'document' : 'home');
+        return true;
+      }
+      if (route === 'capture') {
+        setRoute(activeDoc ? 'document' : 'home');
+        return true;
+      }
+      if (route === 'document') {
+        setActiveDoc(null);
+        setActivePages([]);
+        setRoute('home');
+        return true;
+      }
+      if (route === 'settings') {
+        setRoute('home');
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [route, legalReturnRoute, activeDoc]);
 
   const filteredDocuments = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -448,6 +488,20 @@ function MainApp() {
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={async () => {
+              setRefreshing(true);
+              try {
+                await refreshDocuments();
+              } finally {
+                setRefreshing(false);
+              }
+            }}
+            tintColor={colors.accent}
+          />
+        }
       >
         {/* Top Bar */}
         <View style={styles.topBar}>
@@ -723,6 +777,21 @@ function MainApp() {
             return (
               <Pressable
                 onPress={() => openDocument(item, 'document')}
+                onLongPress={() => {
+                  Alert.alert(item.title, 'Choose a quick action', [
+                    { text: 'Open', onPress: () => openDocument(item, 'document') },
+                    { text: 'Export PDF / Image', onPress: () => openDocument(item, 'export') },
+                    {
+                      text: 'Delete',
+                      style: 'destructive',
+                      onPress: async () => {
+                        await deleteDocument(item.id);
+                        await refreshDocuments();
+                      },
+                    },
+                    { text: 'Cancel', style: 'cancel' },
+                  ]);
+                }}
                 accessibilityRole="button"
                 accessibilityLabel={`Open document ${item.title}, ${item.pageCount} pages, updated ${formattedDate}`}
                 style={({ pressed }) => [
