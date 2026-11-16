@@ -25,6 +25,7 @@ import { CropAndEnhanceScreen } from './src/screens/CropAndEnhanceScreen';
 import { DocumentDetailScreen } from './src/screens/DocumentDetailScreen';
 import { ExportScreen } from './src/screens/ExportScreen';
 import { LegalDocumentScreen } from './src/screens/LegalDocumentScreen';
+import { LockScreen } from './src/screens/LockScreen';
 import { OnboardingConsentScreen } from './src/screens/OnboardingConsentScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import {
@@ -50,7 +51,9 @@ import {
 import { deleteAllScanFiles } from './src/services/storage/localFiles';
 import {
   clearSecurePrefs,
+  getAppPin,
   getStoredConsent,
+  setAppPin,
   setStoredConsent,
 } from './src/services/storage/securePrefs';
 import {
@@ -76,6 +79,8 @@ function MainApp() {
   const { colors, resolvedScheme, toggleTheme } = useTheme();
   const [initializing, setInitializing] = useState(true);
   const [hasConsented, setHasConsented] = useState(false);
+  const [appPin, setAppPinState] = useState<string | null>(null);
+  const [isUnlocked, setIsUnlocked] = useState(false);
   const [route, setRoute] = useState<ActiveRoute>('onboarding');
   const [legalReturnRoute, setLegalReturnRoute] = useState<'onboarding' | 'settings'>('onboarding');
   const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocId>('privacy');
@@ -112,10 +117,15 @@ function MainApp() {
 
   useEffect(() => {
     (async () => {
-      const consented = await getStoredConsent();
-      const docs = await listDocuments();
+      const [consented, storedPin, docs] = await Promise.all([
+        getStoredConsent(),
+        getAppPin(),
+        listDocuments(),
+      ]);
       setDocuments(docs);
       setHasConsented(consented);
+      setAppPinState(storedPin);
+      setIsUnlocked(!storedPin);
       setRoute(consented ? 'home' : 'onboarding');
       setInitializing(false);
 
@@ -277,6 +287,15 @@ function MainApp() {
       <StudioShell style={styles.centered}>
         <ActivityIndicator size="large" color={colors.accent} />
       </StudioShell>
+    );
+  }
+
+  if (appPin && !isUnlocked) {
+    return (
+      <>
+        <StatusBar style={resolvedScheme === 'dark' ? 'light' : 'dark'} />
+        <LockScreen expectedPin={appPin} onUnlock={() => setIsUnlocked(true)} />
+      </>
     );
   }
 
@@ -475,6 +494,12 @@ function MainApp() {
         <SettingsScreen
           docCount={documents.length}
           totalPages={documents.reduce((sum, d) => sum + d.pageCount, 0)}
+          hasAppPin={Boolean(appPin)}
+          onSaveAppPin={async (pin) => {
+            await setAppPin(pin);
+            setAppPinState(pin);
+            setIsUnlocked(true);
+          }}
           onBack={() => setRoute('home')}
           onOpenLegal={(docId) => openLegal(docId, 'settings')}
           onCheckForUpdates={async () => {

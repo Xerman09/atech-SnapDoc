@@ -315,24 +315,25 @@ export async function reversePageOrder(documentId: string): Promise<void> {
   if (pages.length < 2) return;
   const reversed = [...pages].reverse();
   if (Platform.OS === 'web') {
-    for (let i = 0; i < Math.floor(pages.length / 2); i++) {
-      // Reuse webMovePage by swapping positions cleanly via database fallback
+    for (let i = 0; i < pages.length - 1; i++) {
+      for (let j = 0; j < pages.length - 1 - i; j++) {
+        await webMovePage(documentId, reversed[pages.length - 1 - i].id, 'up');
+      }
     }
+    return;
   }
-  if (Platform.OS !== 'web') {
-    const db = await getDb();
-    const now = Date.now();
-    for (let i = 0; i < reversed.length; i++) {
-      await db.runAsync('UPDATE pages SET page_index = ? WHERE id = ?', [
-        i,
-        reversed[i].id,
-      ]);
-    }
-    await db.runAsync(
-      'UPDATE documents SET cover_uri = ?, updated_at = ? WHERE id = ?',
-      [reversed[0].processedUri, now, documentId]
-    );
+  const db = await getDb();
+  const now = Date.now();
+  for (let i = 0; i < reversed.length; i++) {
+    await db.runAsync('UPDATE pages SET page_index = ? WHERE id = ?', [
+      i,
+      reversed[i].id,
+    ]);
   }
+  await db.runAsync(
+    'UPDATE documents SET cover_uri = ?, updated_at = ? WHERE id = ?',
+    [reversed[0].processedUri, now, documentId]
+  );
 }
 
 export async function listPagesByDocument(documentId: string): Promise<ScannedPage[]> {

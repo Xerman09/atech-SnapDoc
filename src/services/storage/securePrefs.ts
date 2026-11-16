@@ -5,6 +5,7 @@ import { NormalizedStroke, ThemeMode } from '../../types/scanner';
 const KEY_CONSENTED = 'snapdoc_user_consented';
 const KEY_THEME_MODE = 'snapdoc_theme_mode';
 const KEY_SAVED_SIGNATURE = 'snapdoc_saved_signature';
+const KEY_APP_PIN = 'snapdoc_app_pin';
 
 function webStorageGet(key: string): string | null {
   try {
@@ -112,17 +113,48 @@ export async function setSavedSignature(strokes: NormalizedStroke[]): Promise<vo
   }
 }
 
+export async function getAppPin(): Promise<string | null> {
+  try {
+    const val =
+      Platform.OS === 'web'
+        ? webStorageGet(KEY_APP_PIN)
+        : await SecureStore.getItemAsync(KEY_APP_PIN);
+    return val && /^\d{4}$/.test(val) ? val : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setAppPin(pin: string | null): Promise<void> {
+  const valid = pin && /^\d{4}$/.test(pin) ? pin : null;
+  if (Platform.OS === 'web') {
+    webStorageSet(KEY_APP_PIN, valid);
+    return;
+  }
+  try {
+    if (valid) {
+      await SecureStore.setItemAsync(KEY_APP_PIN, valid);
+    } else {
+      await SecureStore.deleteItemAsync(KEY_APP_PIN);
+    }
+  } catch {
+    // Ignore if unavailable
+  }
+}
+
 export async function clearSecurePrefs(): Promise<void> {
   if (Platform.OS === 'web') {
     webStorageSet(KEY_CONSENTED, null);
     webStorageSet(KEY_THEME_MODE, null);
     webStorageSet(KEY_SAVED_SIGNATURE, null);
+    webStorageSet(KEY_APP_PIN, null);
     return;
   }
   try {
     await SecureStore.deleteItemAsync(KEY_CONSENTED);
     await SecureStore.deleteItemAsync(KEY_THEME_MODE);
     await SecureStore.deleteItemAsync(KEY_SAVED_SIGNATURE);
+    await SecureStore.deleteItemAsync(KEY_APP_PIN);
   } catch {
     // Best-effort cleanup
   }

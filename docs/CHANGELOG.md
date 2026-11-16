@@ -3,6 +3,11 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 17, 2026
+### Release v1.0.16 — Offline 4-Digit App Lock (PIN) & Web Reverse Fix
+- Added **4-Digit App Lock PIN** (`getAppPin` / `setAppPin` in `src/services/storage/securePrefs.ts`, `src/screens/LockScreen.tsx`, PIN setup modal in `src/screens/SettingsScreen.tsx`, and startup lock gate in `App.tsx`) encrypted in Android Keystore via `expo-secure-store`.
+- Fixed `reversePageOrder` Web fallback in `src/services/storage/database.ts`.
+- Bumped app version to `1.0.16` (`android.versionCode: 16`).
+
 ### Release v1.0.15 — Export Page Range & Reverse Page Order
 - Added `src/utils/pageRange.ts` (`parsePageRange`) and a **Pages** range selector (`All` or e.g. `1-3, 5`) in `src/screens/ExportScreen.tsx` for exporting subsets of multi-page documents.
 - Added `reversePageOrder` in `src/services/storage/database.ts` and a **Reverse Order** action chip in `src/screens/DocumentDetailScreen.tsx`.
