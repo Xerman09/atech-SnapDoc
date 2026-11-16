@@ -4,6 +4,7 @@ import {
   FlatList,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -12,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { StudioShell } from '../components/StudioShell';
 import { useTheme } from '../theme/ThemeContext';
-import { ScanDocument, ScannedPage } from '../types/scanner';
+import { DocumentFolder, ScanDocument, ScannedPage } from '../types/scanner';
 import { formatRelativeDate } from '../utils/dateFormat';
 
 interface DocumentDetailScreenProps {
@@ -20,6 +21,7 @@ interface DocumentDetailScreenProps {
   pages: ScannedPage[];
   onBack: () => void;
   onRename: (newTitle: string) => void;
+  onChangeFolder: (folder: DocumentFolder) => void;
   onAddPageCamera: () => void;
   onAddPageGallery: () => void;
   onEditPage: (page: ScannedPage) => void;
@@ -39,11 +41,14 @@ const FILTER_LABELS: Record<ScannedPage['filter'], string> = {
   eco_print: 'Eco Print',
 };
 
+const FOLDERS: DocumentFolder[] = ['General', 'Receipts', 'IDs', 'Work', 'School'];
+
 export function DocumentDetailScreen({
   document,
   pages,
   onBack,
   onRename,
+  onChangeFolder,
   onAddPageCamera,
   onAddPageGallery,
   onEditPage,
@@ -181,6 +186,42 @@ export function DocumentDetailScreen({
           </Text>
         </Pressable>
       </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.folderBar}
+        style={styles.folderScroll}
+      >
+        {FOLDERS.map((folderName) => {
+          const active = (document.folder ?? 'General') === folderName;
+          return (
+            <Pressable
+              key={folderName}
+              onPress={() => onChangeFolder(folderName)}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: active }}
+              accessibilityLabel={`Move document to ${folderName} folder`}
+              style={[
+                styles.folderChip,
+                {
+                  borderColor: active ? colors.accent : colors.border,
+                  backgroundColor: active ? colors.accentSoft : colors.surface,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.folderChipText,
+                  { color: active ? colors.accent : colors.textSecondary },
+                ]}
+              >
+                {folderName}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
 
       <FlatList
         data={pages}
@@ -364,6 +405,25 @@ const styles = StyleSheet.create({
   },
   addBtnSecondaryText: {
     fontSize: 13.5,
+    fontWeight: '600',
+  },
+  folderScroll: {
+    maxHeight: 44,
+    marginTop: 10,
+  },
+  folderBar: {
+    paddingHorizontal: 20,
+    gap: 8,
+    alignItems: 'center',
+  },
+  folderChip: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  folderChipText: {
+    fontSize: 12,
     fontWeight: '600',
   },
   listContent: {

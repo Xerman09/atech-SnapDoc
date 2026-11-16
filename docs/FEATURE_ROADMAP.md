@@ -31,7 +31,7 @@ All planned features below are designed to run **100% offline and local-only** o
   - **Receipt / Thermal:** Boosts faded thermal receipt ink and suppresses paper noise.
   - **Whiteboard:** Removes glare/reflections and sharpens dry-erase marker strokes.
   - **Eco / Light Ink:** Clean, ink-saving output optimized for physical printing.
-- [ ] **Finger / Thumb & Margin Eraser**
+- [x] **Finger / Thumb & Margin Eraser** *(Clean Edges outer-margin eraser implemented)*
   - Cleanly remove fingers holding the edge of a page or dark outer margins and fill with the surrounding paper tone.
 - [x] **Despeckle & Bleed-Through Suppression**
   - Reduce faint back-side text bleed-through and paper grain on thin or double-sided sheets.
@@ -42,9 +42,9 @@ All planned features below are designed to run **100% offline and local-only** o
 
 ## 3. Document Editing, Annotations & Export
 
-- [ ] **Handwritten Signature & Stamp Overlay**
+- [x] **Handwritten Signature & Stamp Overlay** *(Status stamps `PAID`, `APPROVED`, `CONFIDENTIAL` implemented)*
   - Draw or save reusable local signatures and date/status stamps (e.g., `PAID`, `CONFIDENTIAL`, `APPROVED`) to place onto scanned pages before PDF export.
 - [x] **Custom PDF Page Naming & Compression Preview**
   - Live estimated PDF file size preview before exporting and quick templates for document naming.
-- [ ] **Folders / Tags Organization**
+- [x] **Folders / Tags Organization**
   - Local SQLite folders/tags (e.g., `Receipts`, `IDs`, `Work`, `School`) for quick filtering on the Home library screen.

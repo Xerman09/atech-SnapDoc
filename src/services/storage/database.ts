@@ -4,6 +4,7 @@ import { z } from 'zod';
 import {
   AdjustmentSettings,
   CropQuad,
+  DocumentFolder,
   FilterPreset,
   ScanDocument,
   ScannedPage,
@@ -18,6 +19,7 @@ import {
   webListPages,
   webMovePage,
   webRenameDocument,
+  webUpdateDocumentFolder,
   webUpdatePage,
   webWipeAll,
 } from './webDbFallback';
@@ -30,12 +32,26 @@ const TitleSchema = z
   .min(1, 'Document title cannot be empty')
   .max(80, 'Document title must be 80 characters or fewer');
 
-const FilterSchema = z.enum(['original', 'magic_color', 'grayscale', 'bw_scan']);
+const FilterSchema = z.enum([
+  'original',
+  'magic_color',
+  'grayscale',
+  'bw_scan',
+  'receipt',
+  'whiteboard',
+  'eco_print',
+]);
+
+const FolderSchema = z.enum(['General', 'Receipts', 'IDs', 'Work', 'School']);
 
 const AdjustmentsSchema = z.object({
   brightness: z.number().min(-100).max(100),
   contrast: z.number().min(-100).max(100),
   sharpness: z.number().min(0).max(100),
+  whitening: z.number().min(0).max(100).optional(),
+  despeckle: z.boolean().optional(),
+  cleanMargins: z.boolean().optional(),
+  stamp: z.enum(['none', 'PAID', 'APPROVED', 'CONFIDENTIAL']).optional(),
 });
 
 let dbPromise: Promise<SQLite.SQLiteDatabase> | null = null;
@@ -50,6 +66,7 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
         CREATE TABLE IF NOT EXISTS documents (
           id TEXT PRIMARY KEY NOT NULL,
           title TEXT NOT NULL,
+          folder TEXT NOT NULL DEFAULT 'General',
           page_count INTEGER NOT NULL DEFAULT 0,
           cover_uri TEXT,
           created_at INTEGER NOT NULL,
@@ -69,6 +86,13 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
           FOREIGN KEY (document_id) REFERENCES documents(id) ON DELETE CASCADE
         );
       `);
+      try {
+        await db.execAsync(
+          "ALTER TABLE documents ADD COLUMN folder TEXT NOT NULL DEFAULT 'General';"
+        );
+      } catch {
+        // Column already exists on upgraded databases
+      }
       return db;
     })();
   }
@@ -84,6 +108,7 @@ export function sanitizeDocumentTitle(rawTitle: string): string {
 interface DocumentRow {
   id: string;
   title: string;
+  folder?: string;
   page_count: number;
   cover_uri: string | null;
   created_at: number;
@@ -104,9 +129,11 @@ interface PageRow {
 }
 
 function mapDocumentRow(row: DocumentRow): ScanDocument {
+  const parsedFolder = FolderSchema.safeParse(row.folder);
   return {
     id: row.id,
     title: row.title,
+    folder: parsedFolder.success ? parsedFolder.data : 'General',
     pageCount: row.page_count,
     coverUri: row.cover_uri ?? undefined,
     createdAt: row.created_at,
@@ -155,13 +182,18 @@ export async function listDocuments(): Promise<ScanDocument[]> {
   if (Platform.OS === 'web') return webListDocuments();
   const db = await getDb();
   const rows = await db.getAllAsync<DocumentRow>(
-    'SELECT id, title, page_count, cover_uri, created_at, updated_at FROM documents ORDER BY updated_at DESC'
+    'SELECT id, title, folder, page_count, cover_uri, created_at, updated_at FROM documents ORDER BY updated_at DESC'
   );
   return rows.map(mapDocumentRow);
 }
 
-export async function createDocument(title: string): Promise<ScanDocument> {
+export async function createDocument(
+  title: string,
+  folder: DocumentFolder = 'General'
+): Promise<ScanDocument> {
   const safeTitle = sanitizeDocumentTitle(title);
+  const parsedFolder = FolderSchema.safeParse(folder);
+  const safeFolder: DocumentFolder = parsedFolder.success ? parsedFolder.data : 'General';
   const now = Date.now();
   const id = `doc_${now}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -169,6 +201,7 @@ export async function createDocument(title: string): Promise<ScanDocument> {
     return webCreateDocument({
       id,
       title: safeTitle,
+      folder: safeFolder,
       pageCount: 0,
       createdAt: now,
       updatedAt: now,
@@ -177,13 +210,14 @@ export async function createDocument(title: string): Promise<ScanDocument> {
 
   const db = await getDb();
   await db.runAsync(
-    'INSERT INTO documents (id, title, page_count, cover_uri, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)',
-    [id, safeTitle, 0, null, now, now]
+    'INSERT INTO documents (id, title, folder, page_count, cover_uri, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    [id, safeTitle, safeFolder, 0, null, now, now]
   );
 
   return {
     id,
     title: safeTitle,
+    folder: safeFolder,
     pageCount: 0,
     createdAt: now,
     updatedAt: now,
@@ -200,6 +234,22 @@ export async function renameDocument(documentId: string, newTitle: string): Prom
     [safeTitle, now, documentId]
   );
   return safeTitle;
+}
+
+export async function updateDocumentFolder(
+  documentId: string,
+  folder: DocumentFolder
+): Promise<DocumentFolder> {
+  const parsed = FolderSchema.safeParse(folder);
+  const safeFolder: DocumentFolder = parsed.success ? parsed.data : 'General';
+  if (Platform.OS === 'web') return webUpdateDocumentFolder(documentId, safeFolder);
+  const db = await getDb();
+  const now = Date.now();
+  await db.runAsync(
+    'UPDATE documents SET folder = ?, updated_at = ? WHERE id = ?',
+    [safeFolder, now, documentId]
+  );
+  return safeFolder;
 }
 
 export async function listPagesByDocument(documentId: string): Promise<ScannedPage[]> {

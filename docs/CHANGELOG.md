@@ -3,6 +3,12 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 16, 2026
+### Release v1.0.7 — Folders/Tags, Clean Outer Edges & Status Stamp Overlays
+- Added **Folders / Tags Organization** (`General`, `Receipts`, `IDs`, `Work`, `School`) with SQLite schema migration (`folder` column + `updateDocumentFolder`) in `src/services/storage/database.ts`, `src/services/storage/webDbFallback.ts`, folder chips in `src/screens/DocumentDetailScreen.tsx`, and Home library filtering + folder badges in `App.tsx`.
+- Added **Clean Edges** (`cleanMargins`) outer-margin whitening and **Status Stamp Overlays** (`PAID`, `APPROVED`, `CONFIDENTIAL`) in `src/services/filters/scanFilters.ts` and `src/screens/CropAndEnhanceScreen.tsx`.
+- Expanded `FilterSchema` and `AdjustmentsSchema` in `src/services/storage/database.ts` so all presets and adjustments persist cleanly.
+- Added unit tests for `cleanMargins` and `PAID` stamp rendering in `src/__tests__/cvAndFilters.test.ts`, updated `docs/FEATURE_ROADMAP.md`, and bumped app version to `1.0.7` (`android.versionCode: 7`).
+
 ### Release v1.0.6 — Despeckle/Bleed Clean, Auto-Orientation & Export Naming Preview
 - Added **Despeckle & Bleed-Through Suppression (`Clean Bleed`)** in `src/types/scanner.ts`, `src/services/filters/scanFilters.ts`, and `src/screens/CropAndEnhanceScreen.tsx`.
 - Added **Auto-Orientation (`Upright`)** using horizontal/vertical edge-projection variance (`shouldRotate90ForUprightText` in `src/services/cv/edgeDetector.ts`, `autoOrientImageIfNeeded` in `src/services/cv/imagePipeline.ts`, and `Upright` button in `src/screens/CropAndEnhanceScreen.tsx`).

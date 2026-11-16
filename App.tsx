@@ -38,6 +38,7 @@ import {
   listPagesByDocument,
   movePageOrder,
   renameDocument,
+  updateDocumentFolder,
   updatePage,
   wipeAllDatabaseData,
 } from './src/services/storage/database';
@@ -52,7 +53,7 @@ import {
   UpdateManifest,
 } from './src/services/update/inAppUpdater';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
-import { ScanDocument, ScannedPage } from './src/types/scanner';
+import { DocumentFolder, ScanDocument, ScannedPage } from './src/types/scanner';
 import { formatRelativeDate, formatShortDate } from './src/utils/dateFormat';
 import { createSampleDocumentDataUri } from './src/utils/sampleDocument';
 
@@ -76,6 +77,7 @@ function MainApp() {
 
   const [documents, setDocuments] = useState<ScanDocument[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedFolder, setSelectedFolder] = useState<'All' | DocumentFolder>('All');
   const [activeDoc, setActiveDoc] = useState<ScanDocument | null>(null);
   const [activePages, setActivePages] = useState<ScannedPage[]>([]);
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
@@ -114,9 +116,13 @@ function MainApp() {
 
   const filteredDocuments = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return documents;
-    return documents.filter((d) => d.title.toLowerCase().includes(q));
-  }, [documents, searchQuery]);
+    return documents.filter((d) => {
+      const folderOk =
+        selectedFolder === 'All' || (d.folder ?? 'General') === selectedFolder;
+      const queryOk = !q || d.title.toLowerCase().includes(q);
+      return folderOk && queryOk;
+    });
+  }, [documents, searchQuery, selectedFolder]);
 
   const openLegal = (docId: LegalDocId, returnTo: 'onboarding' | 'settings') => {
     setActiveLegalDoc(docId);
@@ -345,6 +351,10 @@ function MainApp() {
           }}
           onRename={async (newTitle) => {
             await renameDocument(activeDoc.id, newTitle);
+            await refreshDocuments();
+          }}
+          onChangeFolder={async (folder) => {
+            await updateDocumentFolder(activeDoc.id, folder);
             await refreshDocuments();
           }}
           onAddPageCamera={() => setRoute('capture')}
@@ -606,6 +616,41 @@ function MainApp() {
           </View>
         </View>
 
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.folderFilterRow}
+        >
+          {(['All', 'General', 'Receipts', 'IDs', 'Work', 'School'] as const).map((folder) => {
+            const active = selectedFolder === folder;
+            return (
+              <Pressable
+                key={folder}
+                onPress={() => setSelectedFolder(folder)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={`Filter documents by ${folder}`}
+                style={[
+                  styles.folderFilterChip,
+                  {
+                    borderColor: active ? colors.accent : colors.border,
+                    backgroundColor: active ? colors.accentSoft : colors.surface,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.folderFilterText,
+                    { color: active ? colors.accent : colors.textSecondary },
+                  ]}
+                >
+                  {folder}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+
         <FlatList
           data={filteredDocuments}
           keyExtractor={(item) => item.id}
@@ -691,6 +736,11 @@ function MainApp() {
                     <View style={[styles.pageBadge, { backgroundColor: colors.surfaceElevated }]}>
                       <Text style={[styles.pageBadgeText, { color: colors.textSecondary }]}>
                         {item.pageCount} {item.pageCount === 1 ? 'pg' : 'pgs'}
+                      </Text>
+                    </View>
+                    <View style={[styles.pageBadge, { backgroundColor: colors.accentSoft }]}>
+                      <Text style={[styles.pageBadgeText, { color: colors.accent }]}>
+                        {item.folder ?? 'General'}
                       </Text>
                     </View>
                     <Text style={[styles.pageSubtitle, { color: colors.textMuted }]}>
@@ -1022,5 +1072,19 @@ const styles = StyleSheet.create({
     borderRadius: 9,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  folderFilterRow: {
+    gap: 8,
+    paddingVertical: 2,
+  },
+  folderFilterChip: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  folderFilterText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

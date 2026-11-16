@@ -21,12 +21,18 @@ export interface CropQuad {
   bottomLeft: Point;
 }
 
+export type DocumentFolder = 'General' | 'Receipts' | 'IDs' | 'Work' | 'School';
+
+export type StampPreset = 'none' | 'PAID' | 'APPROVED' | 'CONFIDENTIAL';
+
 export interface AdjustmentSettings {
   brightness: number; // -100 to 100
   contrast: number;   // -100 to 100
   sharpness: number;  // 0 to 100
   whitening?: number; // 0 to 100 (paper background whitening)
   despeckle?: boolean; // suppress paper grain and back-side bleed-through
+  cleanMargins?: boolean; // whiten outer 3% border shadows/fingers
+  stamp?: StampPreset; // optional rubber-stamp overlay
 }
 
 export interface ScannedPage {
@@ -45,6 +51,7 @@ export interface ScannedPage {
 export interface ScanDocument {
   id: string;
   title: string;
+  folder?: DocumentFolder;
   pageCount: number;
   coverUri?: string;
   createdAt: number; // Unix ms stored internally only; display via dateFormat.ts

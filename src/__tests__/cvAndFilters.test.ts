@@ -176,4 +176,38 @@ describe('CV geometry and scan filter engine', () => {
     }
     expect(shouldRotate90ForUprightText(rgba, w, h)).toBe(true);
   });
+
+  it('cleans dark outer margins and renders status stamp overlay', () => {
+    const w = 120;
+    const h = 120;
+    const rgba = new Uint8Array(w * h * 4).fill(250);
+    // Dark outer border pixel at (0, 0)
+    rgba[0] = 30;
+    rgba[1] = 30;
+    rgba[2] = 30;
+
+    const out = applyScanFilterToRgba(rgba, w, h, 'original', {
+      brightness: 0,
+      contrast: 0,
+      sharpness: 0,
+      cleanMargins: true,
+      stamp: 'PAID',
+    });
+
+    // Outer edge is whitened
+    expect(out[0]).toBe(255);
+    // Stamp region near bottom-right has green-tinted pixels (PAID stamp)
+    let hasGreenStamp = false;
+    for (let y = h - 40; y < h; y++) {
+      for (let x = w - 60; x < w; x++) {
+        const idx = (y * w + x) * 4;
+        if (out[idx + 1] > out[idx] + 20) {
+          hasGreenStamp = true;
+          break;
+        }
+      }
+      if (hasGreenStamp) break;
+    }
+    expect(hasGreenStamp).toBe(true);
+  });
 });

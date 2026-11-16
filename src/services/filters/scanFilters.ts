@@ -1,4 +1,95 @@
-import { AdjustmentSettings, FilterPreset } from '../../types/scanner';
+import { AdjustmentSettings, FilterPreset, StampPreset } from '../../types/scanner';
+
+const STAMP_FONT_5X7: Record<string, string[]> = {
+  A: ['01110', '10001', '10001', '11111', '10001', '10001', '10001'],
+  C: ['01110', '10001', '10000', '10000', '10000', '10001', '01110'],
+  D: ['11110', '10001', '10001', '10001', '10001', '10001', '11110'],
+  E: ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
+  F: ['11111', '10000', '10000', '11110', '10000', '10000', '10000'],
+  I: ['11111', '00100', '00100', '00100', '00100', '00100', '11111'],
+  L: ['10000', '10000', '10000', '10000', '10000', '10000', '11111'],
+  N: ['10001', '11001', '10101', '10011', '10001', '10001', '10001'],
+  O: ['01110', '10001', '10001', '10001', '10001', '10001', '01110'],
+  P: ['11110', '10001', '10001', '11110', '10000', '10000', '10000'],
+  R: ['11110', '10001', '10001', '11110', '10100', '10010', '10001'],
+  T: ['11111', '00100', '00100', '00100', '00100', '00100', '00100'],
+  V: ['10001', '10001', '10001', '10001', '10001', '01010', '00100'],
+};
+
+function drawRubberStamp(
+  out: Uint8Array,
+  width: number,
+  height: number,
+  stamp: StampPreset
+): void {
+  if (stamp === 'none' || width < 60 || height < 60) return;
+
+  const isRed = stamp === 'CONFIDENTIAL';
+  const sr = isRed ? 185 : 21;
+  const sg = isRed ? 28 : 128;
+  const sb = isRed ? 28 : 61;
+
+  const scale = Math.max(2, Math.round(Math.min(width, height) / 260));
+  const charW = 5 * scale;
+  const charH = 7 * scale;
+  const gap = scale * 2;
+  const padX = scale * 6;
+  const padY = scale * 5;
+  const textW = stamp.length * charW + Math.max(0, stamp.length - 1) * gap;
+  const boxW = textW + padX * 2;
+  const boxH = charH + padY * 2;
+
+  const margin = Math.max(12, Math.round(Math.min(width, height) * 0.04));
+  const startX = Math.max(4, width - margin - boxW);
+  const startY = Math.max(4, height - margin - boxH);
+  const borderT = Math.max(2, scale);
+
+  const blendPixel = (x: number, y: number, alpha: number) => {
+    if (x < 0 || x >= width || y < 0 || y >= height) return;
+    const idx = (y * width + x) * 4;
+    out[idx] = Math.round(out[idx] * (1 - alpha) + sr * alpha);
+    out[idx + 1] = Math.round(out[idx + 1] * (1 - alpha) + sg * alpha);
+    out[idx + 2] = Math.round(out[idx + 2] * (1 - alpha) + sb * alpha);
+  };
+
+  // Border box
+  for (let y = startY; y < startY + boxH; y++) {
+    for (let x = startX; x < startX + boxW; x++) {
+      const onBorder =
+        x < startX + borderT ||
+        x >= startX + boxW - borderT ||
+        y < startY + borderT ||
+        y >= startY + boxH - borderT;
+      if (onBorder) {
+        blendPixel(x, y, 0.78);
+      } else {
+        blendPixel(x, y, 0.06);
+      }
+    }
+  }
+
+  // Bitmap letters
+  let cursorX = startX + padX;
+  const textY = startY + padY;
+  for (const ch of stamp) {
+    const glyph = STAMP_FONT_5X7[ch];
+    if (glyph) {
+      for (let gy = 0; gy < 7; gy++) {
+        const row = glyph[gy];
+        for (let gx = 0; gx < 5; gx++) {
+          if (row[gx] === '1') {
+            for (let sy = 0; sy < scale; sy++) {
+              for (let sx = 0; sx < scale; sx++) {
+                blendPixel(cursorX + gx * scale + sx, textY + gy * scale + sy, 0.82);
+              }
+            }
+          }
+        }
+      }
+    }
+    cursorX += charW + gap;
+  }
+}
 
 function clampByte(v: number): number {
   return v < 0 ? 0 : v > 255 ? 255 : Math.round(v);
@@ -332,6 +423,33 @@ export function applyScanFilterToRgba(
         }
       }
     }
+  }
+
+  // Clean outer margins (suppresses dark scanner borders & edge finger tips)
+  if (adjustments.cleanMargins && width >= 30 && height >= 30) {
+    const mx = Math.max(2, Math.round(width * 0.028));
+    const my = Math.max(2, Math.round(height * 0.028));
+    const marginLimit = Math.min(mx, my);
+    const feather = Math.min(4, Math.max(1, Math.floor(marginLimit / 2)));
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const distEdge = Math.min(x, width - 1 - x, y, height - 1 - y);
+        if (distEdge < marginLimit) {
+          const idx = (y * width + x) * 4;
+          const t =
+            distEdge > marginLimit - feather
+              ? (marginLimit - distEdge) / feather
+              : 1;
+          out[idx] = Math.round(out[idx] * (1 - t) + 255 * t);
+          out[idx + 1] = Math.round(out[idx + 1] * (1 - t) + 255 * t);
+          out[idx + 2] = Math.round(out[idx + 2] * (1 - t) + 255 * t);
+        }
+      }
+    }
+  }
+
+  if (adjustments.stamp && adjustments.stamp !== 'none') {
+    drawRubberStamp(out, width, height, adjustments.stamp);
   }
 
   return out;

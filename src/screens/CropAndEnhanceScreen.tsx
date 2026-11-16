@@ -26,6 +26,7 @@ import {
   AdjustmentSettings,
   CropQuad,
   FilterPreset,
+  StampPreset,
 } from '../types/scanner';
 
 interface CropAndEnhanceScreenProps {
@@ -67,7 +68,11 @@ const DEFAULT_ADJUSTMENTS: AdjustmentSettings = {
   sharpness: 15,
   whitening: 35,
   despeckle: false,
+  cleanMargins: false,
+  stamp: 'none',
 };
+
+const STAMP_CYCLE: StampPreset[] = ['none', 'PAID', 'APPROVED', 'CONFIDENTIAL'];
 
 const LOUPE_SIZE = 112;
 const LOUPE_ZOOM = 2.4;
@@ -592,7 +597,80 @@ export function CropAndEnhanceScreen({
                   { color: adjustments.despeckle ? colors.accent : colors.textPrimary },
                 ]}
               >
-                {adjustments.despeckle ? 'Bleed Clean: On' : 'Clean Bleed'}
+                {adjustments.despeckle ? 'Bleed: On' : 'Clean Bleed'}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                const next = {
+                  ...adjustments,
+                  cleanMargins: !adjustments.cleanMargins,
+                };
+                setAdjustments(next);
+                runProcessing(filter, next);
+              }}
+              accessibilityRole="switch"
+              accessibilityState={{ checked: Boolean(adjustments.cleanMargins) }}
+              accessibilityLabel="Toggle clean outer margins"
+              style={[
+                styles.reCropBtn,
+                styles.footerHalfBtn,
+                {
+                  borderColor: adjustments.cleanMargins ? colors.accent : colors.border,
+                  backgroundColor: adjustments.cleanMargins ? colors.accentSoft : 'transparent',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.reCropText,
+                  { color: adjustments.cleanMargins ? colors.accent : colors.textPrimary },
+                ]}
+              >
+                {adjustments.cleanMargins ? 'Edges: On' : 'Clean Edges'}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                const curr = adjustments.stamp ?? 'none';
+                const idx = STAMP_CYCLE.indexOf(curr);
+                const nextStamp = STAMP_CYCLE[(idx + 1) % STAMP_CYCLE.length];
+                const next = { ...adjustments, stamp: nextStamp };
+                setAdjustments(next);
+                runProcessing(filter, next);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Cycle status stamp overlay"
+              style={[
+                styles.reCropBtn,
+                styles.footerHalfBtn,
+                {
+                  borderColor:
+                    adjustments.stamp && adjustments.stamp !== 'none'
+                      ? colors.accent
+                      : colors.border,
+                  backgroundColor:
+                    adjustments.stamp && adjustments.stamp !== 'none'
+                      ? colors.accentSoft
+                      : 'transparent',
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.reCropText,
+                  {
+                    color:
+                      adjustments.stamp && adjustments.stamp !== 'none'
+                        ? colors.accent
+                        : colors.textPrimary,
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {adjustments.stamp && adjustments.stamp !== 'none'
+                  ? adjustments.stamp
+                  : 'Stamp'}
               </Text>
             </Pressable>
             <Pressable
@@ -602,7 +680,7 @@ export function CropAndEnhanceScreen({
               style={[styles.reCropBtn, styles.footerHalfBtn, { borderColor: colors.border }]}
             >
               <Text style={[styles.reCropText, { color: colors.primary }]}>
-                Adjust Corners
+                Corners
               </Text>
             </Pressable>
           </View>

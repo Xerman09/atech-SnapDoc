@@ -1,4 +1,4 @@
-import { ScanDocument, ScannedPage } from '../../types/scanner';
+import { DocumentFolder, ScanDocument, ScannedPage } from '../../types/scanner';
 
 const WEB_DOCS_KEY = 'snapdoc_web_documents';
 const WEB_PAGES_KEY = 'snapdoc_web_pages';
@@ -41,6 +41,17 @@ export function webRenameDocument(documentId: string, safeTitle: string): string
   );
   writeJson(WEB_DOCS_KEY, docs);
   return safeTitle;
+}
+
+export function webUpdateDocumentFolder(
+  documentId: string,
+  folder: DocumentFolder
+): DocumentFolder {
+  const docs = webListDocuments().map((d) =>
+    d.id === documentId ? { ...d, folder, updatedAt: Date.now() } : d
+  );
+  writeJson(WEB_DOCS_KEY, docs);
+  return folder;
 }
 
 export function webListPages(documentId: string): ScannedPage[] {
