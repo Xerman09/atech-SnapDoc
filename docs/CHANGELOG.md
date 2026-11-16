@@ -2,6 +2,13 @@
 
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
+## [Unreleased] — Nov 17, 2026
+### Release v1.0.12 — Hold-to-Compare, Lightbox Paging & PDF Page Numbers/Watermark
+- Added **Hold: Compare** pill on the Enhance preview in `src/screens/CropAndEnhanceScreen.tsx` so users can press-and-hold to compare the enhanced scan against the original capture.
+- Added **Prev / Next** page navigation inside the full-screen Lightbox modal in `src/screens/DocumentDetailScreen.tsx`.
+- Added **Page #** (`1 / N` footer) and **CONFIDENTIAL Watermark** toggles in `src/services/export/exportService.ts` and `src/screens/ExportScreen.tsx` via offline `pdf-lib` rendering.
+- Bumped app version to `1.0.12` (`android.versionCode: 12`).
+
 ## [Unreleased] — Nov 16, 2026
 ### Release v1.0.11 — Mobile UX Polish (Hardware Back, Lightbox Preview, Scrollable Tools & Quick Actions)
 - Added Android hardware `BackHandler` navigation across all screens in `App.tsx`.

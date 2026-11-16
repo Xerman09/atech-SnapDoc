@@ -103,6 +103,7 @@ export function CropAndEnhanceScreen({
   const [busy, setBusy] = useState(false);
   const [activeCorner, setActiveCorner] = useState<CornerKey | null>(null);
   const [eraserMode, setEraserMode] = useState(false);
+  const [comparingOriginal, setComparingOriginal] = useState(false);
   const [liveEraserStroke, setLiveEraserStroke] = useState<{ x: number; y: number }[]>([]);
   const [signatureOpen, setSignatureOpen] = useState(false);
   const [boxSize, setBoxSize] = useState({ width: 300, height: 400 });
@@ -331,7 +332,12 @@ export function CropAndEnhanceScreen({
 
       <View style={styles.previewArea} onLayout={handleBoxLayout}>
         <Image
-          source={{ uri: step === 'enhance' && processedUri ? processedUri : sourceUri }}
+          source={{
+            uri:
+              step === 'enhance' && processedUri && !comparingOriginal
+                ? processedUri
+                : sourceUri,
+          }}
           style={styles.previewImage}
           resizeMode="contain"
           accessibilityLabel={
@@ -443,6 +449,20 @@ export function CropAndEnhanceScreen({
             </View>
           );
         })() : null}
+
+        {step === 'enhance' && processedUri ? (
+          <Pressable
+            onPressIn={() => setComparingOriginal(true)}
+            onPressOut={() => setComparingOriginal(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Press and hold to compare with original image"
+            style={styles.comparePill}
+          >
+            <Text style={styles.comparePillText}>
+              {comparingOriginal ? 'ORIGINAL' : 'Hold: Compare'}
+            </Text>
+          </Pressable>
+        ) : null}
 
         {busy ? (
           <View style={styles.loadingOverlay}>
@@ -1098,5 +1118,21 @@ const styles = StyleSheet.create({
     width: 1.5,
     height: 20,
     backgroundColor: '#60A5FA',
+  },
+  comparePill: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: 'rgba(15, 23, 42, 0.82)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  comparePillText: {
+    color: '#FFFFFF',
+    fontSize: 11.5,
+    fontWeight: '700',
   },
 });

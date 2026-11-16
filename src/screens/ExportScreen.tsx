@@ -42,6 +42,8 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
   const [quality, setQuality] = useState<ExportQualityPreset>('balanced');
   const [imageFormat, setImageFormat] = useState<ImageExportFormat>('jpeg');
   const [customName, setCustomName] = useState(document.title);
+  const [includePageNumbers, setIncludePageNumbers] = useState(true);
+  const [includeWatermark, setIncludeWatermark] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const exportBaseName = customName.trim() || document.title;
@@ -61,6 +63,8 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
         pageSize,
         margin,
         quality,
+        includePageNumbers,
+        includeWatermark,
       });
       const sizeKb = Math.max(1, Math.round(sizeBytes / 1024));
       if (destination === 'download') {
@@ -265,6 +269,56 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
                   </Pressable>
                 );
               })}
+            </View>
+
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary, marginTop: 6 }]}>
+              PDF Options
+            </Text>
+            <View style={styles.row}>
+              <Pressable
+                onPress={() => setIncludePageNumbers((prev) => !prev)}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: includePageNumbers }}
+                accessibilityLabel="Toggle PDF page numbers"
+                style={[
+                  styles.chip,
+                  {
+                    borderColor: includePageNumbers ? colors.accent : colors.border,
+                    backgroundColor: includePageNumbers ? colors.accentSoft : colors.background,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    { color: includePageNumbers ? colors.accent : colors.textPrimary },
+                  ]}
+                >
+                  {includePageNumbers ? 'Page #: On' : 'Page #: Off'}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setIncludeWatermark((prev) => !prev)}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: includeWatermark }}
+                accessibilityLabel="Toggle Confidential PDF watermark"
+                style={[
+                  styles.chip,
+                  {
+                    borderColor: includeWatermark ? colors.accent : colors.border,
+                    backgroundColor: includeWatermark ? colors.accentSoft : colors.background,
+                  },
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.chipText,
+                    { color: includeWatermark ? colors.accent : colors.textPrimary },
+                  ]}
+                >
+                  {includeWatermark ? 'Watermark: On' : 'Watermark: Off'}
+                </Text>
+              </Pressable>
             </View>
           </View>
         ) : (

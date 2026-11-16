@@ -349,6 +349,40 @@ export function DocumentDetailScreen({
               style={styles.lightboxImage}
               resizeMode="contain"
             />
+            {pages.length > 1 ? (
+              <View style={styles.lightboxNavRow}>
+                <Pressable
+                  onPress={() => {
+                    const prevIdx = Math.max(0, previewPage.index - 1);
+                    setPreviewPage({ page: pages[prevIdx], index: prevIdx });
+                  }}
+                  disabled={previewPage.index === 0}
+                  accessibilityRole="button"
+                  accessibilityLabel="Previous page"
+                  style={[
+                    styles.lightboxBtn,
+                    { opacity: previewPage.index === 0 ? 0.35 : 1 },
+                  ]}
+                >
+                  <Text style={styles.lightboxBtnText}>‹ Prev</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    const nextIdx = Math.min(pages.length - 1, previewPage.index + 1);
+                    setPreviewPage({ page: pages[nextIdx], index: nextIdx });
+                  }}
+                  disabled={previewPage.index === pages.length - 1}
+                  accessibilityRole="button"
+                  accessibilityLabel="Next page"
+                  style={[
+                    styles.lightboxBtn,
+                    { opacity: previewPage.index === pages.length - 1 ? 0.35 : 1 },
+                  ]}
+                >
+                  <Text style={styles.lightboxBtnText}>Next ›</Text>
+                </Pressable>
+              </View>
+            ) : null}
           </View>
         ) : null}
       </Modal>
@@ -575,5 +609,10 @@ const styles = StyleSheet.create({
   lightboxImage: {
     flex: 1,
     width: '100%',
+  },
+  lightboxNavRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 12,
   },
 });

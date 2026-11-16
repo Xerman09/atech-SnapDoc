@@ -2,7 +2,7 @@ import { Directory, File, Paths } from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
-import { PDFDocument } from 'pdf-lib';
+import { degrees, PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { Platform } from 'react-native';
 import { ScanDocument, ScannedPage } from '../../types/scanner';
 import { sanitizeFilename } from '../../utils/fileValidation';
@@ -90,8 +90,18 @@ export async function generateDocumentPdf(params: {
   pageSize: PdfPageSize;
   margin: PdfMarginPreset;
   quality: ExportQualityPreset;
+  includePageNumbers?: boolean;
+  includeWatermark?: boolean;
 }): Promise<{ uri: string; sizeBytes: number }> {
-  const { document, pages, pageSize, margin, quality } = params;
+  const {
+    document,
+    pages,
+    pageSize,
+    margin,
+    quality,
+    includePageNumbers = false,
+    includeWatermark = false,
+  } = params;
   if (pages.length === 0) {
     throw new Error('Cannot export an empty document.');
   }
@@ -102,10 +112,16 @@ export async function generateDocumentPdf(params: {
   pdfDoc.setCreator('SnapDoc Offline');
   pdfDoc.setProducer('SnapDoc PDF Engine');
 
+  const font =
+    includePageNumbers || includeWatermark
+      ? await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+      : null;
+
   const compress = QUALITY_MAP[quality];
   const marginPt = MARGIN_PT_MAP[margin];
 
-  for (const pageItem of pages) {
+  for (let idx = 0; idx < pages.length; idx++) {
+    const pageItem = pages[idx];
     const prepared = await ImageManipulator.manipulateAsync(
       pageItem.processedUri,
       [],
@@ -149,6 +165,34 @@ export async function generateDocumentPdf(params: {
       width: drawW,
       height: drawH,
     });
+
+    if (includeWatermark && font) {
+      const wmText = 'CONFIDENTIAL';
+      const wmSize = Math.max(24, Math.min(48, Math.round(targetW * 0.075)));
+      const wmWidth = font.widthOfTextAtSize(wmText, wmSize);
+      pdfPage.drawText(wmText, {
+        x: Math.max(20, (targetW - wmWidth * 0.7) / 2),
+        y: targetH * 0.42,
+        size: wmSize,
+        font,
+        color: rgb(0.75, 0.14, 0.14),
+        opacity: 0.18,
+        rotate: degrees(32),
+      });
+    }
+
+    if (includePageNumbers && font) {
+      const numText = `${idx + 1} / ${pages.length}`;
+      const numSize = 10;
+      const numW = font.widthOfTextAtSize(numText, numSize);
+      pdfPage.drawText(numText, {
+        x: (targetW - numW) / 2,
+        y: 8,
+        size: numSize,
+        font,
+        color: rgb(0.35, 0.4, 0.48),
+      });
+    }
   }
 
   const pdfBytes = await pdfDoc.save();
