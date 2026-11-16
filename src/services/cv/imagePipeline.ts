@@ -86,6 +86,68 @@ export async function autoDetectNormalizedQuad(uri: string): Promise<CropQuad> {
   }
 }
 
+async function saveRgbaAsJpeg(
+  rgba: Uint8Array,
+  width: number,
+  height: number,
+  prefix = 'processed'
+): Promise<{ uri: string; width: number; height: number }> {
+  const encoded = jpeg.encode({ data: rgba, width, height }, 94);
+
+  if (Platform.OS === 'web') {
+    const base64Jpg = uint8ArrayToBase64(encoded.data);
+    return {
+      uri: `data:image/jpeg;base64,${base64Jpg}`,
+      width,
+      height,
+    };
+  }
+
+  const outName = sanitizeFilename(
+    `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.jpg`,
+    'jpg'
+  );
+  const outFile = new File(getScansDirectory(), outName);
+  outFile.create({ intermediates: true, overwrite: true });
+  await outFile.write(new Uint8Array(encoded.data));
+
+  return {
+    uri: outFile.uri,
+    width,
+    height,
+  };
+}
+
+async function decodeWorkingImage(
+  sourceUri: string,
+  maxWidth: number
+): Promise<{ data: Uint8Array; width: number; height: number }> {
+  const working = await ImageManipulator.manipulateAsync(
+    sourceUri,
+    [{ resize: { width: maxWidth } }],
+    { compress: 0.95, format: ImageManipulator.SaveFormat.JPEG, base64: true }
+  );
+  if (!working.base64) {
+    throw new Error('Failed to decode working image.');
+  }
+  const rawBytes = base64ToUint8Array(working.base64);
+  const decoded = jpeg.decode(rawBytes, { useTArray: true });
+  return { data: decoded.data, width: decoded.width, height: decoded.height };
+}
+
+function normalizedToPixelQuad(
+  normalizedQuad: CropQuad,
+  width: number,
+  height: number
+): CropQuad {
+  return {
+    topLeft: { x: normalizedQuad.topLeft.x * width, y: normalizedQuad.topLeft.y * height },
+    topRight: { x: normalizedQuad.topRight.x * width, y: normalizedQuad.topRight.y * height },
+    bottomRight: { x: normalizedQuad.bottomRight.x * width, y: normalizedQuad.bottomRight.y * height },
+    bottomLeft: { x: normalizedQuad.bottomLeft.x * width, y: normalizedQuad.bottomLeft.y * height },
+  };
+}
+
 /**
  * Applies 4-point perspective warp + scan filter + adjustments offline,
  * returning the newly saved processed image URI and dimensions.
@@ -96,40 +158,10 @@ export async function processScanPage(
   filter: FilterPreset,
   adjustments: AdjustmentSettings
 ): Promise<{ uri: string; width: number; height: number }> {
-  // Normalize to high-detail working resolution (max 1600px wide) for crisp text output
-  const working = await ImageManipulator.manipulateAsync(
-    sourceUri,
-    [{ resize: { width: 1600 } }],
-    { compress: 0.95, format: ImageManipulator.SaveFormat.JPEG, base64: true }
-  );
-
-  if (!working.base64) {
-    throw new Error('Failed to decode working image.');
-  }
-
-  const rawBytes = base64ToUint8Array(working.base64);
-  const decoded = jpeg.decode(rawBytes, { useTArray: true });
-
-  const pixelQuad: CropQuad = {
-    topLeft: {
-      x: normalizedQuad.topLeft.x * decoded.width,
-      y: normalizedQuad.topLeft.y * decoded.height,
-    },
-    topRight: {
-      x: normalizedQuad.topRight.x * decoded.width,
-      y: normalizedQuad.topRight.y * decoded.height,
-    },
-    bottomRight: {
-      x: normalizedQuad.bottomRight.x * decoded.width,
-      y: normalizedQuad.bottomRight.y * decoded.height,
-    },
-    bottomLeft: {
-      x: normalizedQuad.bottomLeft.x * decoded.width,
-      y: normalizedQuad.bottomLeft.y * decoded.height,
-    },
-  };
-
+  const decoded = await decodeWorkingImage(sourceUri, 1600);
+  const pixelQuad = normalizedToPixelQuad(normalizedQuad, decoded.width, decoded.height);
   const targetDims = estimateTargetDimensions(pixelQuad, 1800);
+
   const warped = warpPerspectiveRgba(
     decoded.data,
     decoded.width,
@@ -147,35 +179,120 @@ export async function processScanPage(
     adjustments
   );
 
-  const encoded = jpeg.encode(
-    {
-      data: filtered,
-      width: targetDims.width,
-      height: targetDims.height,
-    },
-    94
+  return saveRgbaAsJpeg(filtered, targetDims.width, targetDims.height, 'processed');
+}
+
+/**
+ * Warps and filters a two-page book spread, then splits it down the center spine
+ * into two separate left & right page JPEGs.
+ */
+export async function splitSpreadPage(
+  sourceUri: string,
+  normalizedQuad: CropQuad,
+  filter: FilterPreset,
+  adjustments: AdjustmentSettings
+): Promise<[{ uri: string; width: number; height: number }, { uri: string; width: number; height: number }]> {
+  const decoded = await decodeWorkingImage(sourceUri, 1600);
+  const pixelQuad = normalizedToPixelQuad(normalizedQuad, decoded.width, decoded.height);
+  const targetDims = estimateTargetDimensions(pixelQuad, 1800);
+
+  const warped = warpPerspectiveRgba(
+    decoded.data,
+    decoded.width,
+    decoded.height,
+    pixelQuad,
+    targetDims.width,
+    targetDims.height
   );
 
-  if (Platform.OS === 'web') {
-    const base64Jpg = uint8ArrayToBase64(encoded.data);
-    return {
-      uri: `data:image/jpeg;base64,${base64Jpg}`,
-      width: targetDims.width,
-      height: targetDims.height,
-    };
+  const filtered = applyScanFilterToRgba(
+    warped,
+    targetDims.width,
+    targetDims.height,
+    filter,
+    adjustments
+  );
+
+  const fullW = targetDims.width;
+  const fullH = targetDims.height;
+  const leftW = Math.max(1, Math.floor(fullW / 2));
+  const rightW = Math.max(1, fullW - leftW);
+
+  const leftRgba = new Uint8Array(leftW * fullH * 4);
+  const rightRgba = new Uint8Array(rightW * fullH * 4);
+
+  for (let y = 0; y < fullH; y++) {
+    const srcRow = y * fullW * 4;
+    leftRgba.set(filtered.subarray(srcRow, srcRow + leftW * 4), y * leftW * 4);
+    rightRgba.set(
+      filtered.subarray(srcRow + leftW * 4, srcRow + fullW * 4),
+      y * rightW * 4
+    );
   }
 
-  const outName = sanitizeFilename(
-    `processed_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.jpg`,
-    'jpg'
-  );
-  const outFile = new File(getScansDirectory(), outName);
-  outFile.create({ intermediates: true, overwrite: true });
-  await outFile.write(new Uint8Array(encoded.data));
+  const leftPage = await saveRgbaAsJpeg(leftRgba, leftW, fullH, 'spread_left');
+  const rightPage = await saveRgbaAsJpeg(rightRgba, rightW, fullH, 'spread_right');
+  return [leftPage, rightPage];
+}
 
-  return {
-    uri: outFile.uri,
-    width: targetDims.width,
-    height: targetDims.height,
+/**
+ * Places Front and Back ID card captures onto a single clean white A4 canvas
+ * (1240 x 1754 px) offline and saves it as a JPEG.
+ */
+export async function composeIdCardA4Page(
+  frontUri: string,
+  backUri: string
+): Promise<{ uri: string; width: number; height: number }> {
+  const a4W = 1240;
+  const a4H = 1754;
+  const canvas = new Uint8Array(a4W * a4H * 4);
+  canvas.fill(255);
+
+  const [front, back] = await Promise.all([
+    decodeWorkingImage(frontUri, 920),
+    decodeWorkingImage(backUri, 920),
+  ]);
+
+  const drawCard = (
+    card: { data: Uint8Array; width: number; height: number },
+    slotTopY: number,
+    slotH: number
+  ) => {
+    const maxW = Math.round(a4W * 0.78);
+    const maxH = Math.round(slotH * 0.82);
+    const scale = Math.min(maxW / card.width, maxH / card.height);
+    const dstW = Math.max(1, Math.round(card.width * scale));
+    const dstH = Math.max(1, Math.round(card.height * scale));
+    const startX = Math.round((a4W - dstW) / 2);
+    const startY = Math.round(slotTopY + (slotH - dstH) / 2);
+
+    // Subtle 2px slate border around card
+    for (let y = Math.max(0, startY - 2); y < Math.min(a4H, startY + dstH + 2); y++) {
+      for (let x = Math.max(0, startX - 2); x < Math.min(a4W, startX + dstW + 2); x++) {
+        const idx = (y * a4W + x) * 4;
+        canvas[idx] = 203;
+        canvas[idx + 1] = 213;
+        canvas[idx + 2] = 225;
+        canvas[idx + 3] = 255;
+      }
+    }
+
+    for (let y = 0; y < dstH; y++) {
+      const sy = Math.min(card.height - 1, Math.floor((y / dstH) * card.height));
+      for (let x = 0; x < dstW; x++) {
+        const sx = Math.min(card.width - 1, Math.floor((x / dstW) * card.width));
+        const sIdx = (sy * card.width + sx) * 4;
+        const dIdx = ((startY + y) * a4W + (startX + x)) * 4;
+        canvas[dIdx] = card.data[sIdx];
+        canvas[dIdx + 1] = card.data[sIdx + 1];
+        canvas[dIdx + 2] = card.data[sIdx + 2];
+        canvas[dIdx + 3] = 255;
+      }
+    }
   };
+
+  drawCard(front, 80, Math.floor((a4H - 160) / 2));
+  drawCard(back, 80 + Math.floor((a4H - 160) / 2), Math.floor((a4H - 160) / 2));
+
+  return saveRgbaAsJpeg(canvas, a4W, a4H, 'idcard_a4');
 }

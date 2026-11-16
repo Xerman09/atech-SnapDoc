@@ -128,5 +128,14 @@ describe('CV geometry and scan filter engine', () => {
     expect(whiteboard[0]).toBeGreaterThan(220);
     // Blue marker pixel remains strongly blue-dominant
     expect(whiteboard[14]).toBeGreaterThan(whiteboard[12]);
+
+    const eco = applyScanFilterToRgba(src, 2, 2, 'eco_print', {
+      brightness: 0,
+      contrast: 0,
+      sharpness: 15,
+      whitening: 50,
+    });
+    expect(eco[0]).toBe(255);
+    expect(eco[4]).toBeGreaterThan(60); // lighter ink fill for toner/ink saving
   });
 });

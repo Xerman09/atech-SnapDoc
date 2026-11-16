@@ -3,6 +3,12 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 16, 2026
+### Release v1.0.5 — ID Card A4 Mode, 2-Page Book Spread Split & Eco Print
+- Added **ID Card / Two-Sided Scan Mode** in `src/screens/CaptureScreen.tsx` and `composeIdCardA4Page` in `src/services/cv/imagePipeline.ts` to capture Front + Back of an ID and compose both onto a single A4 page (`1240×1754`).
+- Added **Book / Two-Page Spread Split (`Split 2P`)** in `src/screens/CropAndEnhanceScreen.tsx`, `splitSpreadPage` in `src/services/cv/imagePipeline.ts`, and `onSaveMultiple` in `App.tsx` to split an open two-page spread down the spine into two separate pages.
+- Added **Eco Print** (`eco_print`) preset in `src/types/scanner.ts`, `src/services/filters/scanFilters.ts`, `src/screens/CropAndEnhanceScreen.tsx`, and `src/screens/DocumentDetailScreen.tsx`, plus a unit test in `src/__tests__/cvAndFilters.test.ts`.
+- Updated `docs/FEATURE_ROADMAP.md` and bumped app version to `1.0.5` (`android.versionCode: 5`).
+
 ### Release v1.0.4 — Corner Magnifier Loupe, Batch Scan, Framing Grid & Scan Presets
 - Added a **2.4× Corner Magnifier Loupe** with crosshair in `src/screens/CropAndEnhanceScreen.tsx` when dragging any crop corner handle.
 - Added **Multi-Page Batch Scan Mode** (live page thumbnail + counter badge + `Done` action) and a toggleable **3×3 Framing Grid** in `src/screens/CaptureScreen.tsx`.

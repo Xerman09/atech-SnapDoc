@@ -290,6 +290,22 @@ function MainApp() {
             await refreshDocuments();
             setRoute('document');
           }}
+          onSaveMultiple={async (results) => {
+            for (const edited of results) {
+              await addPageToDocument({
+                documentId: activeDoc.id,
+                originalUri: edited.originalUri,
+                processedUri: edited.processedUri,
+                cropQuad: edited.cropQuad,
+                filter: edited.filter,
+                adjustments: edited.adjustments,
+              });
+            }
+            setPendingUri(null);
+            setEditingPageId(null);
+            await refreshDocuments();
+            setRoute('document');
+          }}
           onCancel={async () => {
             setPendingUri(null);
             setEditingPageId(null);

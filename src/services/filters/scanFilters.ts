@@ -165,7 +165,8 @@ export function applyScanFilterToRgba(
     filter === 'magic_color' ||
     filter === 'grayscale' ||
     filter === 'receipt' ||
-    filter === 'whiteboard'
+    filter === 'whiteboard' ||
+    filter === 'eco_print'
   ) {
     const gray = new Uint8Array(totalPixels);
     for (let i = 0; i < totalPixels; i++) {
@@ -224,6 +225,18 @@ export function applyScanFilterToRgba(
       r = (r - 140) * 1.28 + 150;
       g = (g - 140) * 1.28 + 150;
       b = (b - 140) * 1.28 + 150;
+    } else if (filter === 'eco_print' && paperBg) {
+      // Eco / Light Ink mode: clean pure-white paper + lighter ink fills to save toner/ink
+      const bg = Math.max(45, paperBg[i]);
+      const gain = Math.min(2.35, Math.max(0.9, 254 / bg));
+      r = Math.min(255, r * gain);
+      g = Math.min(255, g * gain);
+      b = Math.min(255, b * gain);
+
+      // Gently lift midtones/blacks (~20%) so heavy fills print cleanly with less ink
+      r = r > 225 ? 255 : Math.min(255, r * 0.85 + 38);
+      g = g > 225 ? 255 : Math.min(255, g * 0.85 + 38);
+      b = b > 225 ? 255 : Math.min(255, b * 0.85 + 38);
     } else if (filter === 'magic_color' && paperBg) {
       // Flatten uneven shadows using paper-background estimate (no ink halos)
       const bg = Math.max(45, paperBg[i]);
@@ -259,7 +272,7 @@ export function applyScanFilterToRgba(
   const baseSharp =
     filter === 'magic_color' || filter === 'whiteboard'
       ? 0.28
-      : filter === 'receipt'
+      : filter === 'receipt' || filter === 'eco_print'
         ? 0.35
         : filter === 'grayscale'
           ? 0.2

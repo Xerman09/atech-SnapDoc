@@ -6,7 +6,8 @@ export type FilterPreset =
   | 'grayscale'
   | 'bw_scan'
   | 'receipt'
-  | 'whiteboard';
+  | 'whiteboard'
+  | 'eco_print';
 
 export interface Point {
   x: number;

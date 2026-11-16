@@ -14,6 +14,7 @@ import {
   CapturedImageAsset,
   pickAndValidateImages,
 } from '../services/capture/importImages';
+import { composeIdCardA4Page } from '../services/cv/imagePipeline';
 import { saveScanImageToAppStorage } from '../services/storage/localFiles';
 import { useTheme } from '../theme/ThemeContext';
 
@@ -28,9 +29,10 @@ export function CaptureScreen({ onCaptured, onCancel }: CaptureScreenProps) {
   const [permission, requestPermission] = useCameraPermissions();
   const [facing, setFacing] = useState<CameraType>('back');
   const [torch, setTorch] = useState(false);
-  const [batchMode, setBatchMode] = useState(false);
+  const [scanMode, setScanMode] = useState<'single' | 'batch' | 'id_card'>('single');
   const [showGrid, setShowGrid] = useState(true);
   const [batchAssets, setBatchAssets] = useState<CapturedImageAsset[]>([]);
+  const [idFrontUri, setIdFrontUri] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const handleGalleryImport = async () => {
@@ -71,8 +73,25 @@ export function CaptureScreen({ onCaptured, onCancel }: CaptureScreenProps) {
         source: 'camera',
         createdAt: Date.now(),
       };
-      if (batchMode) {
+      if (scanMode === 'batch') {
         setBatchAssets((prev) => [...prev, asset]);
+      } else if (scanMode === 'id_card') {
+        if (!idFrontUri) {
+          setIdFrontUri(asset.uri);
+        } else {
+          const composed = await composeIdCardA4Page(idFrontUri, asset.uri);
+          setIdFrontUri(null);
+          onCaptured([
+            {
+              id: `idcard_${Date.now()}`,
+              uri: composed.uri,
+              width: composed.width,
+              height: composed.height,
+              source: 'camera',
+              createdAt: Date.now(),
+            },
+          ]);
+        }
       } else {
         onCaptured([asset]);
       }
@@ -165,17 +184,22 @@ export function CaptureScreen({ onCaptured, onCancel }: CaptureScreenProps) {
             <Text style={styles.overlayBtnText}>Grid</Text>
           </Pressable>
           <Pressable
-            onPress={() => setBatchMode((prev) => !prev)}
+            onPress={() => {
+              setIdFrontUri(null);
+              setBatchAssets([]);
+              setScanMode((prev) =>
+                prev === 'single' ? 'batch' : prev === 'batch' ? 'id_card' : 'single'
+              );
+            }}
             accessibilityRole="button"
-            accessibilityState={{ selected: batchMode }}
-            accessibilityLabel={batchMode ? 'Switch to single page mode' : 'Switch to batch scan mode'}
+            accessibilityLabel="Switch scan mode between Single, Batch, and ID Card"
             style={[
               styles.overlayBtn,
-              batchMode && styles.overlayBtnActive,
+              scanMode !== 'single' && styles.overlayBtnActive,
             ]}
           >
             <Text style={styles.overlayBtnText}>
-              {batchMode ? 'Batch' : 'Single'}
+              {scanMode === 'batch' ? 'Batch' : scanMode === 'id_card' ? 'ID Card' : 'Single'}
             </Text>
           </Pressable>
           <Pressable
@@ -213,7 +237,20 @@ export function CaptureScreen({ onCaptured, onCancel }: CaptureScreenProps) {
             <View style={[styles.gridLineH, { top: '66.66%' }]} />
           </View>
         ) : null}
-        <View style={styles.frameGuide} pointerEvents="none">
+        {scanMode === 'id_card' ? (
+          <View style={styles.idPromptBanner} pointerEvents="none">
+            <Text style={styles.idPromptText}>
+              {idFrontUri ? 'Step 2/2: Scan BACK of ID Card' : 'Step 1/2: Scan FRONT of ID Card'}
+            </Text>
+          </View>
+        ) : null}
+        <View
+          style={[
+            styles.frameGuide,
+            scanMode === 'id_card' && styles.idFrameGuide,
+          ]}
+          pointerEvents="none"
+        >
           <View style={[styles.corner, styles.cornerTL]} />
           <View style={[styles.corner, styles.cornerTR]} />
           <View style={[styles.corner, styles.cornerBL]} />
@@ -490,5 +527,25 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 11.5,
     fontWeight: '700',
+  },
+  idPromptBanner: {
+    position: 'absolute',
+    top: 16,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(21, 70, 184, 0.92)',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 999,
+  },
+  idPromptText: {
+    color: '#FFFFFF',
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+  idFrameGuide: {
+    top: '28%',
+    bottom: '28%',
+    left: 20,
+    right: 20,
   },
 });

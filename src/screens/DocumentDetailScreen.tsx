@@ -36,6 +36,7 @@ const FILTER_LABELS: Record<ScannedPage['filter'], string> = {
   bw_scan: 'Black & White',
   receipt: 'Receipt',
   whiteboard: 'Whiteboard',
+  eco_print: 'Eco Print',
 };
 
 export function DocumentDetailScreen({

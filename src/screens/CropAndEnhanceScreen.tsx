@@ -17,6 +17,7 @@ import {
   autoDetectNormalizedQuad,
   processScanPage,
   rotateImage90,
+  splitSpreadPage,
 } from '../services/cv/imagePipeline';
 import { getDefaultCropQuad } from '../services/cv/geometry';
 import { useTheme } from '../theme/ThemeContext';
@@ -35,6 +36,15 @@ interface CropAndEnhanceScreenProps {
     filter: FilterPreset;
     adjustments: AdjustmentSettings;
   }) => void;
+  onSaveMultiple?: (
+    results: Array<{
+      originalUri: string;
+      processedUri: string;
+      cropQuad: CropQuad;
+      filter: FilterPreset;
+      adjustments: AdjustmentSettings;
+    }>
+  ) => void;
   onCancel: () => void;
 }
 
@@ -45,6 +55,7 @@ const FILTER_OPTIONS: { id: FilterPreset; label: string }[] = [
   { id: 'magic_color', label: 'Magic Color' },
   { id: 'receipt', label: 'Receipt' },
   { id: 'whiteboard', label: 'Whiteboard' },
+  { id: 'eco_print', label: 'Eco Print' },
   { id: 'grayscale', label: 'Grayscale' },
   { id: 'bw_scan', label: 'B&W Scan' },
 ];
@@ -66,6 +77,7 @@ function clamp01(v: number): number {
 export function CropAndEnhanceScreen({
   initialUri,
   onSave,
+  onSaveMultiple,
   onCancel,
 }: CropAndEnhanceScreenProps) {
   const { colors } = useTheme();
@@ -392,6 +404,52 @@ export function CropAndEnhanceScreen({
           >
             <Text style={[styles.toolText, { color: colors.textPrimary }]}>Full</Text>
           </Pressable>
+          {onSaveMultiple ? (
+            <Pressable
+              onPress={async () => {
+                if (busy) return;
+                setBusy(true);
+                try {
+                  const [left, right] = await splitSpreadPage(
+                    sourceUri,
+                    quad,
+                    filter,
+                    adjustments
+                  );
+                  onSaveMultiple([
+                    {
+                      originalUri: sourceUri,
+                      processedUri: left.uri,
+                      cropQuad: quad,
+                      filter,
+                      adjustments,
+                    },
+                    {
+                      originalUri: sourceUri,
+                      processedUri: right.uri,
+                      cropQuad: quad,
+                      filter,
+                      adjustments,
+                    },
+                  ]);
+                } catch (err) {
+                  const detail =
+                    err instanceof Error && err.message ? `\n\n${err.message}` : '';
+                  Alert.alert(
+                    'Split Failed',
+                    `Could not split spread into two pages.${detail}`
+                  );
+                } finally {
+                  setBusy(false);
+                }
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Split two-page book spread into two separate pages"
+              style={[styles.toolBtn, { borderColor: colors.accent }]}
+            >
+              <Text style={[styles.toolText, { color: colors.accent }]}>Split 2P</Text>
+            </Pressable>
+          ) : null}
         </View>
       ) : (
         <View style={[styles.enhancePanel, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>

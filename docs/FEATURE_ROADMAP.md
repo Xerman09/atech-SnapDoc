@@ -10,13 +10,13 @@ All planned features below are designed to run **100% offline and local-only** o
   - Pop up a zoomed circular magnifier above the user's finger while dragging any of the 4 corner handles in `CropAndEnhanceScreen`, enabling pixel-accurate alignment without the thumb blocking the corner.
 - [x] **Multi-Page Batch Scan Mode** *(High Priority)*
   - Keep the camera active after each shutter press with a live page counter (`1, 2, 3…`) and thumbnail preview strip so multi-page packets can be captured continuously and cropped/enhanced in sequence.
-- [ ] **ID Card / Two-Sided Scan Mode** *(High Priority)*
+- [x] **ID Card / Two-Sided Scan Mode** *(High Priority)*
   - Guided front-and-back capture flow for IDs, licenses, and cards that automatically aligns and places both sides cleanly onto a single A4 page.
 - [ ] **Live Edge Overlay & Auto-Shutter**
   - Real-time document boundary detection overlay inside `CaptureScreen` with an optional auto-capture countdown when the document is held steady.
 - [x] **Tap-to-Focus, Exposure Lock & Framing Guides** *(Framing Grid implemented; Tap-to-Focus pending)*
   - Tap anywhere on the camera preview to focus/meter on the document, plus toggleable 3×3 alignment grid and tilt-level indicator.
-- [ ] **Book / Two-Page Spread Split**
+- [x] **Book / Two-Page Spread Split**
   - Capture an open two-page book or notebook spread in one shot and automatically split it along the center spine into two separate straight pages.
 - [ ] **Auto-Orientation Detection**
   - Automatically detect sideways or upside-down captures and rotate them upright before saving.
@@ -27,7 +27,7 @@ All planned features below are designed to run **100% offline and local-only** o
 
 - [x] **Paper Whitening & Shadow Removal Slider** *(High Priority)*
   - Dedicated intensity control to neutralize warm indoor lighting and cast shadows into clean white paper while preserving ink, stamps, and colored highlights.
-- [x] **Specialized Scan Presets** *(Receipt & Whiteboard implemented; Eco pending)*
+- [x] **Specialized Scan Presets** *(Receipt, Whiteboard & Eco Print implemented)*
   - **Receipt / Thermal:** Boosts faded thermal receipt ink and suppresses paper noise.
   - **Whiteboard:** Removes glare/reflections and sharpens dry-erase marker strokes.
   - **Eco / Light Ink:** Clean, ink-saving output optimized for physical printing.
