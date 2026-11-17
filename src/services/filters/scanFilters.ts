@@ -384,24 +384,41 @@ export function applyScanFilterToRgba(
       g = g > 225 ? 255 : Math.min(255, g * 0.85 + 38);
       b = b > 225 ? 255 : Math.min(255, b * 0.85 + 38);
     } else if (filter === 'magic_color' && paperBg) {
-      // Flatten uneven shadows using paper-background estimate (no ink halos)
+      // Literal flatbed-scan look: neutralize warm/gray paper cast -> pure white, keep ink & colors crisp
       const bg = Math.max(45, paperBg[i]);
-      const gain = Math.min(2.15, Math.max(0.85, targetWhite / bg));
+      const srcLuma = 0.299 * r + 0.587 * g + 0.114 * b;
+      const ratio = srcLuma / bg;
+      const chroma = Math.max(r, g, b) - Math.min(r, g, b);
+
+      const gain = Math.min(2.25, Math.max(0.88, (targetWhite + 4) / bg));
       r = Math.min(255, r * gain);
       g = Math.min(255, g * gain);
       b = Math.min(255, b * gain);
 
-      // Gentle document white-point lift & ink deepening
-      const luma = 0.299 * r + 0.587 * g + 0.114 * b;
-      const satBoost = 1.16;
-      r = luma + (r - luma) * satBoost;
-      g = luma + (g - luma) * satBoost;
-      b = luma + (b - luma) * satBoost;
+      // Boost color saturation so stamps, signatures, and logos stay vivid
+      const normLuma = 0.299 * r + 0.587 * g + 0.114 * b;
+      const satBoost = 1.24;
+      r = normLuma + (r - normLuma) * satBoost;
+      g = normLuma + (g - normLuma) * satBoost;
+      b = normLuma + (b - normLuma) * satBoost;
 
-      const contrastBoost = 1.16 + whiteningStrength * 0.1;
-      r = (r - 132) * contrastBoost + 138 + whiteningStrength * 6;
-      g = (g - 132) * contrastBoost + 138 + whiteningStrength * 6;
-      b = (b - 132) * contrastBoost + 138 + whiteningStrength * 6;
+      // Deepen ink & lift highlights
+      const shapeInk = (v: number): number =>
+        v < 155 ? v * (0.86 - whiteningStrength * 0.08) : (v - 155) * 1.25 + 155;
+      r = shapeInk(r);
+      g = shapeInk(g);
+      b = shapeInk(b);
+
+      // Neutralize low-chroma paper background smoothly to pure (255, 255, 255) white
+      const paperFloor = 0.84 - whiteningStrength * 0.08;
+      if (ratio >= paperFloor && chroma < 48) {
+        const span = Math.max(0.06, 0.95 - paperFloor);
+        const rawT = Math.min(1, Math.max(0, (ratio - paperFloor) / span));
+        const whiteBlend = rawT * rawT * (3 - 2 * rawT);
+        r = r * (1 - whiteBlend) + 255 * whiteBlend;
+        g = g * (1 - whiteBlend) + 255 * whiteBlend;
+        b = b * (1 - whiteBlend) + 255 * whiteBlend;
+      }
     }
 
     r = (r - 128) * contrastFactor + 128 + brightnessOffset;

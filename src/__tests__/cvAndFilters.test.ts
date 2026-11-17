@@ -268,4 +268,35 @@ describe('CV geometry and scan filter engine', () => {
     }
     expect(hasDarkSignature).toBe(true);
   });
+
+  it('magic_color whitens warm paper cast to pure white while keeping ink dark', () => {
+    const w = 6;
+    const h = 6;
+    const rgba = new Uint8Array(w * h * 4);
+    for (let i = 0; i < w * h; i++) {
+      rgba[i * 4] = 215;
+      rgba[i * 4 + 1] = 205;
+      rgba[i * 4 + 2] = 185;
+      rgba[i * 4 + 3] = 255;
+    }
+    // Dark ink pixel at center (3, 3)
+    const inkIdx = (3 * w + 3) * 4;
+    rgba[inkIdx] = 45;
+    rgba[inkIdx + 1] = 45;
+    rgba[inkIdx + 2] = 45;
+
+    const out = applyScanFilterToRgba(rgba, w, h, 'magic_color', {
+      brightness: 0,
+      contrast: 0,
+      sharpness: 20,
+      whitening: 50,
+    });
+
+    // Warm paper background snaps cleanly to pure white
+    expect(out[0]).toBe(255);
+    expect(out[1]).toBe(255);
+    expect(out[2]).toBe(255);
+    // Ink stays crisp dark
+    expect(out[inkIdx]).toBeLessThan(80);
+  });
 });

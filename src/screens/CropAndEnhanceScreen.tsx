@@ -67,8 +67,8 @@ const FILTER_OPTIONS: { id: FilterPreset; label: string }[] = [
 const DEFAULT_ADJUSTMENTS: AdjustmentSettings = {
   brightness: 0,
   contrast: 0,
-  sharpness: 15,
-  whitening: 35,
+  sharpness: 25,
+  whitening: 50,
   despeckle: false,
   cleanMargins: false,
   decurl: false,

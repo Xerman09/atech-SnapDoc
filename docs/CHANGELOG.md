@@ -3,6 +3,11 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 17, 2026
+### Release v1.0.18 — Literal Flatbed Scan Look in Magic Color
+- Upgraded `magic_color` in `src/services/filters/scanFilters.ts` with paper-cast neutralization (smoothly snapping low-chroma paper pixels to pure `255` white while deepening dark ink and boosting stamp/logo color saturation) for a literal flatbed-scanned look.
+- Updated default `sharpness` (`25`) and `whitening` (`50`) in `src/screens/CropAndEnhanceScreen.tsx`.
+- Added unit test in `src/__tests__/cvAndFilters.test.ts` and bumped app version to `1.0.18` (`android.versionCode: 18`).
+
 ### Release v1.0.17 — Fix Android Gallery Permissions & Messenger/WhatsApp Image Sharing
 - Added `expo-media-library` plugin permissions in `app.json` so Android grants proper Gallery save access (`READ_MEDIA_IMAGES` / `saveToLibraryAsync`).
 - Added **Save Pages to Gallery** directly in the PDF export view (`src/screens/ExportScreen.tsx`) so Gallery export is always 1 tap away.
