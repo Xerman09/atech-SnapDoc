@@ -539,6 +539,18 @@ export function ExportScreen({ document, pages, onBack }: ExportScreenProps) {
                 Share / Open PDF
               </Text>
             </Pressable>
+            <Pressable
+              onPress={() => handleExportImages('gallery')}
+              disabled={pages.length === 0}
+              accessibilityRole="button"
+              accessibilityLabel="Save all scanned pages to device gallery"
+              style={[styles.secondaryBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
+            >
+              <Ionicons name="images-outline" size={17} color={colors.textPrimary} />
+              <Text style={[styles.secondaryBtnText, { color: colors.textPrimary }]}>
+                Save Pages to Gallery
+              </Text>
+            </Pressable>
           </View>
         ) : (
           <View style={styles.imageActions}>

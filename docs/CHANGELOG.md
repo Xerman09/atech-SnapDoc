@@ -3,6 +3,12 @@
 All notable changes to **SnapDoc (`scanner_app`)** will be documented in this file.
 
 ## [Unreleased] — Nov 17, 2026
+### Release v1.0.17 — Fix Android Gallery Permissions & Messenger/WhatsApp Image Sharing
+- Added `expo-media-library` plugin permissions in `app.json` so Android grants proper Gallery save access (`READ_MEDIA_IMAGES` / `saveToLibraryAsync`).
+- Added **Save Pages to Gallery** directly in the PDF export view (`src/screens/ExportScreen.tsx`) so Gallery export is always 1 tap away.
+- Updated `prepareExportImage` and `shareLocalFile` in `src/services/export/exportService.ts` to stage verified non-empty files in `Paths.cache/share_exports` via `copySync(..., { overwrite: true })` so `SharingFileProvider` serves valid images to Messenger and WhatsApp.
+- Bumped app version to `1.0.17` (`android.versionCode: 17`).
+
 ### Release v1.0.16 — Offline 4-Digit App Lock (PIN) & Web Reverse Fix
 - Added **4-Digit App Lock PIN** (`getAppPin` / `setAppPin` in `src/services/storage/securePrefs.ts`, `src/screens/LockScreen.tsx`, PIN setup modal in `src/screens/SettingsScreen.tsx`, and startup lock gate in `App.tsx`) encrypted in Android Keystore via `expo-secure-store`.
 - Fixed `reversePageOrder` Web fallback in `src/services/storage/database.ts`.

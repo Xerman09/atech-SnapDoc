@@ -245,9 +245,16 @@ export async function prepareExportImage(params: {
     return { uri: result.uri };
   }
 
-  const exportsDir = getExportsDirectory();
-  const targetFile = new File(exportsDir, fileName);
-  await new File(result.uri).copy(targetFile, { overwrite: true });
+  const cacheShareDir = new Directory(Paths.cache, 'share_exports');
+  if (!cacheShareDir.exists) {
+    cacheShareDir.create({ intermediates: true, idempotent: true });
+  }
+  const targetFile = new File(cacheShareDir, fileName);
+  new File(result.uri).copySync(targetFile, { overwrite: true });
+  const info = targetFile.info();
+  if (!info.exists || !info.size || info.size <= 0) {
+    return { uri: result.uri };
+  }
 
   return { uri: targetFile.uri };
 }
@@ -269,7 +276,30 @@ export async function shareLocalFile(uri: string, mimeType: string, title: strin
   if (!available) {
     throw new Error('Sharing is not available on this device.');
   }
-  await Sharing.shareAsync(uri, {
+
+  // Stage a verified copy in Paths.cache/share_exports so FileProvider serves cleanly to Messenger/WhatsApp
+  let shareUri = uri;
+  try {
+    const ext =
+      mimeType === 'application/pdf' ? 'pdf' : mimeType === 'image/png' ? 'png' : 'jpg';
+    const shareDir = new Directory(Paths.cache, 'share_exports');
+    if (!shareDir.exists) {
+      shareDir.create({ intermediates: true, idempotent: true });
+    }
+    const staged = new File(shareDir, sanitizeFilename(title, ext));
+    const srcFile = new File(uri);
+    if (srcFile.uri !== staged.uri) {
+      srcFile.copySync(staged, { overwrite: true });
+    }
+    const stagedInfo = staged.info();
+    if (stagedInfo.exists && stagedInfo.size && stagedInfo.size > 0) {
+      shareUri = staged.uri;
+    }
+  } catch {
+    // Fall back to original verified URI if already in cache
+  }
+
+  await Sharing.shareAsync(shareUri, {
     mimeType,
     dialogTitle: title,
   });
